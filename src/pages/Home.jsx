@@ -5,24 +5,20 @@ import AboutSection from '../sections/AboutSection';
 import SkillsSection from '../sections/SkillsSection';
 import ProjectsSection from '../sections/ProjectsSection';
 import ServicesSection from '../sections/ServicesSection';
-import ExperienceSection from '../sections/ExperienceSection';
-import TestimonialsSection from '../sections/TestimonialsSection';
+import ProcessSection from '../sections/ProcessSection';
 import ContactSection from '../sections/ContactSection';
 
 const Home = () => {
   return (
-    <div>
+    <main>
       <HeroSection />
       <ProjectsSection />
-      <SkillsSection />
-      <AboutSection />
-      
-      
       <ServicesSection />
-      <ExperienceSection />
-      <TestimonialsSection />
+      <SkillsSection />
+      <ProcessSection />
+      <AboutSection />
       <ContactSection />
-    </div>
+    </main>
   );
 };
 

@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-scroll';
 import { FaBars, FaTimes, FaFileDownload } from 'react-icons/fa';
@@ -29,7 +28,7 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { name: 'Home', target: 'hero' },
+    { name: 'Home', target: 'home' }, // Changed from 'hero' to 'home'
     { name: 'Projects', target: 'projects' },
     { name: 'Services', target: 'services' },
     { name: 'Skills', target: 'skills' },
@@ -61,7 +60,6 @@ const Navbar = () => {
       updateUnderline(activeLink);
     }
     
-    // Set up resize observer
     const handleResize = () => updateUnderline(activeLink);
     window.addEventListener('resize', handleResize);
     
@@ -106,9 +104,9 @@ const Navbar = () => {
         alignItems: 'center',
         width: '100%',
       }}>
-        {/* Premium Logo */}
+        {/* Logo */}
         <Link 
-          to="hero" 
+          to="home" // Changed from 'hero' to 'home'
           smooth={true} 
           duration={600} 
           style={{

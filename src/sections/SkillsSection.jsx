@@ -9,7 +9,7 @@ const SkillsSection = () => {
   const skillCategories = [
     {
       title: "Full Stack Development",
-      icon: <FaReact style={{ color: '#f97316', fontSize: '1.8rem' }} />,
+      icon: <FaReact />,
       skills: [
         { name: "MERN Stack", icon: <FaReact /> },
         { name: "JavaScript", icon: <SiJavascript /> },
@@ -19,7 +19,7 @@ const SkillsSection = () => {
     },
     {
       title: "Database & Backend",
-      icon: <FaDatabase style={{ color: '#f97316', fontSize: '1.8rem' }} />,
+      icon: <FaDatabase />,
       skills: [
         { name: "MongoDB", icon: <SiMongodb /> },
         { name: "SQL Databases", icon: <FaDatabase /> },
@@ -29,7 +29,7 @@ const SkillsSection = () => {
     },
     {
       title: "Mobile Development",
-      icon: <FaMobile style={{ color: '#f97316', fontSize: '1.8rem' }} />,
+      icon: <FaMobile />,
       skills: [
         { name: "Android Development", icon: <FaAndroid /> },
         { name: "Cross-Platform", icon: <FaMobile /> },
@@ -38,7 +38,7 @@ const SkillsSection = () => {
     },
     {
       title: "Specialized Skills",
-      icon: <SiTensorflow style={{ color: '#f97316', fontSize: '1.8rem' }} />,
+      icon: <SiTensorflow />,
       skills: [
         { name: "Machine Learning", icon: <SiTensorflow /> },
         { name: "System Architecture", icon: <FaDatabase /> },
@@ -51,30 +51,24 @@ const SkillsSection = () => {
     <section 
       id="skills" 
       style={{
-        padding: '30px 2rem',
-        background: 'linear-gradient(to bottom, #0a0f1d, #0f172a)',
         position: 'relative',
-        overflow: 'hidden',
+        backgroundColor: '#0f172a',
+        padding: '8rem 1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        color: '#cbd5e1',
+        userSelect: 'none',
+        boxSizing: 'border-box',
+        marginTop: '-2rem',
+        zIndex: 1,
       }}
     >
-      {/* Decorative elements */}
-      <div style={{
-        position: 'absolute',
-        top: '20%',
-        right: '10%',
-        width: '300px',
-        height: '300px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(249, 115, 22, 0.05) 0%, transparent 70%)',
-        filter: 'blur(60px)',
-        zIndex: 1,
-      }} />
-      
       <div style={{
         maxWidth: '1280px',
+        width: '100%',
         margin: '0 auto',
         position: 'relative',
-        zIndex: 10,
       }}>
         {/* Section Header */}
         <div style={{
@@ -82,43 +76,35 @@ const SkillsSection = () => {
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          marginBottom: '60px',
+          marginBottom: '3.5rem',
         }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '0.5rem 1.5rem',
-            borderRadius: '50px',
-            background: 'rgba(249, 115, 22, 0.12)',
-            border: '1px solid rgba(249, 115, 22, 0.2)',
-            marginBottom: '1.5rem',
-            color: '#f97316',
-            fontWeight: 600,
-            fontSize: '0.9rem',
+          <h2 style={{
+            fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
+            fontWeight: '700',
+            marginBottom: '1rem',
+            color: '#94a3b8',
+            textAlign: 'center',
+            userSelect: 'none',
             letterSpacing: '1px',
           }}>
-            TECHNICAL EXPERTISE
-          </div>
-          
-          <h2 style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-            fontWeight: 700,
-            color: '#fff',
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}>
             <span style={{
-              background: 'linear-gradient(135deg, #f97316, #f59e0b)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>Technologies</span> I Work With
+              color: '#f59e0b',
+              fontWeight: '700',
+              userSelect: 'none',
+            }}>
+              Technologies
+            </span>{' '}
+            I Master
           </h2>
           
           <p style={{
-            fontSize: '1.1rem',
-            color: '#cbd5e1',
-            maxWidth: '700px',
-            lineHeight: 1.6,
+            maxWidth: 550,
+            marginBottom: '1.5rem',
+            fontSize: '1rem',
+            color: '#7c8a9e',
+            textAlign: 'center',
+            userSelect: 'none',
+            lineHeight: 1.5,
           }}>
             A versatile toolkit for building robust digital solutions across platforms.
           </p>
@@ -128,27 +114,29 @@ const SkillsSection = () => {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '2rem',
+          gap: '1.5rem',
+          padding: '0 1rem',
         }}>
           {skillCategories.map((category, index) => (
             <div 
               key={index}
               style={{
-                padding: '2rem',
-                background: 'rgba(15, 23, 42, 0.4)',
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.08)',
+                padding: '1.5rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px',
                 transition: 'all 0.3s ease',
+                cursor: 'default',
               }}
               onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
                 e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 10px 25px rgba(249, 115, 22, 0.1)';
-                e.currentTarget.style.background = 'rgba(15, 23, 42, 0.6)';
               }}
               onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.background = 'rgba(15, 23, 42, 0.4)';
               }}
             >
               <div style={{
@@ -160,18 +148,20 @@ const SkillsSection = () => {
                 <div style={{
                   width: '50px',
                   height: '50px',
-                  borderRadius: '12px',
-                  background: 'rgba(249, 115, 22, 0.15)',
+                  borderRadius: '10px',
+                  background: 'rgba(249, 115, 22, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  color: '#f97316',
+                  fontSize: '1.5rem',
                 }}>
                   {category.icon}
                 </div>
                 <h3 style={{
-                  fontSize: '1.3rem',
+                  fontSize: '1.2rem',
                   fontWeight: 600,
-                  color: '#fff',
+                  color: '#f97316',
                   margin: 0,
                 }}>
                   {category.title}
@@ -216,7 +206,7 @@ const SkillsSection = () => {
                       {skill.icon}
                     </div>
                     <span style={{
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       color: '#e2e8f0',
                       fontWeight: 500,
                     }}>
@@ -229,28 +219,31 @@ const SkillsSection = () => {
           ))}
         </div>
       </div>
-      
+
       {/* Responsive Styles */}
-      <style>
-        {`
-          @media (max-width: 768px) {
-            #skills {
-              padding: 80px 1.5rem;
-            }
-            
-            .skills-grid {
-              grid-template-columns: 1fr;
-              gap: 1.5rem;
-            }
+      <style>{`
+        @media (max-width: 900px) {
+          #skills {
+            padding: 6rem 1rem;
           }
           
-          @media (max-width: 480px) {
-            #skills {
-              padding: 60px 1rem;
-            }
+          #skills > div > div:last-child {
+            grid-template-columns: repeat(2, 1fr);
           }
-        `}
-      </style>
+        }
+
+        @media (max-width: 600px) {
+          #skills {
+            padding: 5rem 1rem;
+            margin-top: 0;
+          }
+          
+          #skills > div > div:last-child {
+            grid-template-columns: 1fr;
+            padding: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 };

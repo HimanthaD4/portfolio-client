@@ -20,7 +20,7 @@ const AboutSection = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '40px 20px',
+        padding: '10px 20px',
       }}
     >
       <div
@@ -29,6 +29,7 @@ const AboutSection = () => {
           margin: '0 auto',
           width: '100%',
           textAlign: 'center',
+          transform: 'translateY(-45%)',
         }}
       >
         {/* Badge */}

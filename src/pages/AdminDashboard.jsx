@@ -1,48 +1,115 @@
 import React, { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { FiLogOut, FiSettings, FiHome, FiBriefcase, FiUsers, FiFileText, FiBarChart2 } from 'react-icons/fi';
 
-const AdminDashboard = () => {
+const AdminNavbar = () => {
   const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin');
+  };
+
+  // Navbar container styles
+  const navbarStyles = {
+    backgroundColor: '#111827',
+    color: 'white',
+    height: '64px',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+    display: 'flex',
+    alignItems: 'center'
+  };
+
+  // Inner container styles
+  const containerStyles = {
+    width: '100%',
+    maxWidth: '1280px',
+    margin: '0 auto',
+    padding: '0 24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  };
+
+  // Logo styles
+  const logoStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '20px',
+    fontWeight: '600',
+    textDecoration: 'none',
+    color: 'white'
+  };
+
+  // Gradient text for logo
+  const gradientText = {
+    background: 'linear-gradient(90deg, #f59e0b, #f97316)',
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    color: 'transparent'
+  };
+
+  // Navigation links container
+  const navLinksStyles = {
+    display: 'flex',
+    gap: '24px',
+    alignItems: 'center'
+  };
+
+  // Individual nav link styles
+  const navLinkStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#9CA3AF',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: '500',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease'
+  };
+
+  // Active nav link styles
+  const activeNavLinkStyles = {
+    ...navLinkStyles,
+    color: 'white',
+    backgroundColor: 'rgba(249, 115, 22, 0.1)'
+  };
+
+  // Button styles
+  const buttonStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: 'rgba(31, 41, 55, 0.6)',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  };
+
+  // Hover effect for buttons
+  const buttonHover = {
+    backgroundColor: 'rgba(249, 115, 22, 0.2)',
+    borderColor: 'rgba(249, 115, 22, 0.3)'
+  };
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-          <button
-            onClick={logout}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-            </svg>
-            Logout
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-blue-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 text-blue-800">Welcome Admin</h2>
-            <p className="text-gray-700">
-              You have successfully logged into the admin dashboard.
-            </p>
-          </div>
-          
-          <div className="bg-green-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 text-green-800">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full bg-white text-green-700 px-4 py-2 rounded border border-green-200 hover:bg-green-100 transition">
-                Manage Users
-              </button>
-              <button className="w-full bg-white text-green-700 px-4 py-2 rounded border border-green-200 hover:bg-green-100 transition">
-                View Analytics
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<div></div>
   );
 };
 
-export default AdminDashboard;
+export default AdminNavbar;
