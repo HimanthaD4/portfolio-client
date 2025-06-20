@@ -53,21 +53,21 @@ const SkillsSection = () => {
       style={{
         position: 'relative',
         backgroundColor: '#0f172a',
-        padding: '8rem 1rem',
+        padding: '6rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         color: '#cbd5e1',
         userSelect: 'none',
         boxSizing: 'border-box',
-        marginTop: '-2rem',
+        marginTop: '4rem',
         zIndex: 1,
       }}
     >
       <div style={{
         maxWidth: '1280px',
         width: '100%',
-        margin: '0 auto',
+        margin: '-100px auto',
         position: 'relative',
       }}>
         {/* Section Header */}
@@ -105,6 +105,7 @@ const SkillsSection = () => {
             textAlign: 'center',
             userSelect: 'none',
             lineHeight: 1.5,
+            marginBottom:'-40px',
           }}>
             A versatile toolkit for building robust digital solutions across platforms.
           </p>
@@ -115,13 +116,14 @@ const SkillsSection = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '1.5rem',
-          padding: '0 1rem',
+          padding: '1rem 1rem',
+          
         }}>
           {skillCategories.map((category, index) => (
             <div 
               key={index}
               style={{
-                padding: '1.5rem',
+                padding: '1.2rem',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '10px',
@@ -143,7 +145,7 @@ const SkillsSection = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
-                marginBottom: '1.5rem',
+                marginBottom: '1rem',
               }}>
                 <div style={{
                   width: '50px',

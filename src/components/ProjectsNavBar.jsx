@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { Link as ScrollLink } from 'react-scroll';
 import { FaBars, FaTimes, FaFileDownload } from 'react-icons/fa';
-import axios from 'axios';
 
 const SmartNavLink = ({ to, children, activeLink, setActiveLink, linkRefs, scrollSettings, handleMouseEnter, handleMouseLeave, ...props }) => {
   const location = useLocation();
@@ -56,7 +55,6 @@ const Navbar = () => {
     left: 0,
     opacity: 0
   });
-  const [isDownloading, setIsDownloading] = useState(false);
   
   const navRef = useRef(null);
   const linkRefs = useRef({});
@@ -75,61 +73,14 @@ const Navbar = () => {
 
   const navItems = [
     { 
-      name: 'Home', 
+      name: 'Back', 
       target: 'home',
       scrollSettings: {
         duration: 600,
         offset: -80
       }
     },
-    { 
-      name: 'Projects', 
-      target: 'projects',
-      scrollSettings: {
-        duration: 600,
-        offset: -60
-      }
-    },
-    { 
-      name: 'Services', 
-      target: 'services',
-      scrollSettings: {
-        duration: 600,
-        offset: -60
-      }
-    },
-    { 
-      name: 'Skills', 
-      target: 'skills',
-      scrollSettings: {
-        duration: 600,
-        offset: -80
-      }
-    },
-    { 
-      name: 'Process', 
-      target: 'process',
-      scrollSettings: {
-        duration: 1000,  
-        offset: 50   
-      }
-    },
-    { 
-      name: 'About', 
-      target: 'about',
-      scrollSettings: {
-        duration: 600,
-        offset: -80
-      }
-    },
-    { 
-      name: 'Contact', 
-      target: 'contact',
-      scrollSettings: {
-        duration: 800,
-        offset: -60
-      }
-    },
+  
   ];
 
   const updateUnderline = (linkName) => {
@@ -169,39 +120,6 @@ const Navbar = () => {
   const handleMouseLeave = () => {
     updateUnderline(activeLink);
   };
-
-  const handleDownloadCV = async () => {
-  try {
-    setIsDownloading(true);
-    
-    // 1. Define file paths
-    const cvFilename = 'himantha_cv.pdf';
-    const publicPath = process.env.PUBLIC_URL || '';
-    const cvUrl = `${publicPath}/documents/${cvFilename}`;
-
-    // 2. Create temporary link
-    const link = document.createElement('a');
-    link.href = cvUrl;
-    link.download = `Himantha_Hirushan_CV_${new Date().getFullYear()}.pdf`; // Dynamic filename
-    link.target = '_blank'; // For better cross-browser support
-    
-    // 3. Trigger download
-    document.body.appendChild(link);
-    link.click();
-    
-    // 4. Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(cvUrl);
-    }, 100);
-
-  } catch (error) {
-    console.error('Download error:', error);
-    alert('CV download failed. Please contact me directly at your@email.com');
-  } finally {
-    setIsDownloading(false);
-  }
-};
 
   return (
     <nav style={{
@@ -322,40 +240,33 @@ const Navbar = () => {
             ))}
           </div>
           
-          <button 
-            onClick={handleDownloadCV}
-            disabled={isDownloading}
-            style={{
-              background: 'rgba(249, 115, 22, 0.15)',
-              border: '1px solid rgba(249, 115, 22, 0.2)',
-              color: '#f97316',
-              padding: '0.5rem 1.2rem',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              letterSpacing: '0.3px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontFamily: "'Inter', sans-serif",
-              opacity: isDownloading ? 0.7 : 1,
-              pointerEvents: isDownloading ? 'none' : 'auto',
-            }}
-            onMouseEnter={e => {
-              if (!isDownloading) {
-                e.target.style.background = 'rgba(249, 115, 22, 0.25)';
-                e.target.style.transform = 'translateY(-2px)';
-              }
-            }}
-            onMouseLeave={e => {
-              e.target.style.background = 'rgba(249, 115, 22, 0.15)';
-              e.target.style.transform = 'translateY(0)';
-            }}
+          <button style={{
+            background: 'rgba(249, 115, 22, 0.15)',
+            border: '1px solid rgba(249, 115, 22, 0.2)',
+            color: '#f97316',
+            padding: '0.5rem 1.2rem',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            letterSpacing: '0.3px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontFamily: "'Inter', sans-serif",
+          }}
+          onMouseEnter={e => {
+            e.target.style.background = 'rgba(249, 115, 22, 0.25)';
+            e.target.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={e => {
+            e.target.style.background = 'rgba(249, 115, 22, 0.15)';
+            e.target.style.transform = 'translateY(0)';
+          }}
           >
             <FaFileDownload style={{ fontSize: '0.9rem' }} />
-            <span>{isDownloading ? 'Downloading...' : 'Download CV'}</span>
+            <span>Download CV</span>
           </button>
         </div>
 
@@ -422,31 +333,25 @@ const Navbar = () => {
             </SmartNavLink>
           ))}
           
-          <button 
-            onClick={handleDownloadCV}
-            disabled={isDownloading}
-            style={{
-              padding: '0.9rem 1.2rem',
-              background: 'rgba(249, 115, 22, 0.15)',
-              border: '1px solid rgba(249, 115, 22, 0.2)',
-              color: '#f97316',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontSize: '1rem',
-              fontWeight: '500',
-              marginTop: '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.8rem',
-              fontFamily: "'Inter', sans-serif",
-              opacity: isDownloading ? 0.7 : 1,
-              pointerEvents: isDownloading ? 'none' : 'auto',
-            }}
-          >
+          <button style={{
+            padding: '0.9rem 1.2rem',
+            background: 'rgba(249, 115, 22, 0.15)',
+            border: '1px solid rgba(249, 115, 22, 0.2)',
+            color: '#f97316',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontSize: '1rem',
+            fontWeight: '500',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.8rem',
+            fontFamily: "'Inter', sans-serif",
+          }}>
             <FaFileDownload style={{ fontSize: '0.9rem' }} />
-            <span>{isDownloading ? 'Downloading...' : 'Download CV'}</span>
+            <span>Download CV</span>
           </button>
         </div>
       )}

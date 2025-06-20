@@ -45,7 +45,7 @@ const ProcessSection = () => {
         userSelect: 'none',
         boxSizing: 'border-box',
         clipPath: 'polygon(0 0, 100% 5%, 100% 100%, 0% 100%)',
-        marginTop: '-5rem',
+        marginTop: '-2rem',
       }}
     >
       <div style={{
@@ -60,12 +60,12 @@ const ProcessSection = () => {
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          marginBottom: '5rem',
+          marginBottom: '2rem',
         }}>
           <h2 style={{
             fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
             fontWeight: '700',
-            marginBottom: '1rem',
+            marginBottom: '-4.5 rem',
             color: '#94a3b8',
             textAlign: 'center',
             userSelect: 'none',
@@ -83,7 +83,7 @@ const ProcessSection = () => {
           
           <p style={{
             maxWidth: 700,
-            marginBottom: '1.5rem',
+            marginBottom: '0.5rem',
             fontSize: '1rem',
             color: '#7c8a9e',
             textAlign: 'center',

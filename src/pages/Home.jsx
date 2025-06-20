@@ -11,13 +11,13 @@ import ContactSection from '../sections/ContactSection';
 const Home = () => {
   return (
     <main>
-      <HeroSection />
-      <ProjectsSection />
-      <ServicesSection />
-      <SkillsSection />
-      <ProcessSection />
-      <AboutSection />
-      <ContactSection />
+      <div id="home"><HeroSection /></div>
+      <div id="projects"><ProjectsSection /></div>
+      <div id="services"><ServicesSection /></div>
+      <div id="skills"><SkillsSection /></div>
+      <div id="process"><ProcessSection /></div>
+      <div id="about"><AboutSection /></div>
+      <div id="contact"><ContactSection /></div>
     </main>
   );
 };

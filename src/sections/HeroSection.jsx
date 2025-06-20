@@ -9,7 +9,7 @@ import {
 import { FaWhatsapp } from 'react-icons/fa6';
 import { SiLaravel, SiMongodb, SiMysql, SiJavascript, SiTypescript, SiDocker, SiGraphql } from 'react-icons/si';
 
-import HeroImage from '../components/himantha-cartoon2.png';
+import HeroImage from '../images/main.png';
 
 const HeroSection = () => {
   const [typedText, setTypedText] = useState('');
@@ -21,6 +21,7 @@ const HeroSection = () => {
   const techControls = useAnimation();
   const imageControls = useAnimation();
   const [mounted, setMounted] = useState(false);
+  const animationTimeoutRef = useRef(null);
 
   const roles = [
     "Himantha Hirushan",
@@ -47,7 +48,12 @@ const HeroSection = () => {
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    return () => {
+      setMounted(false);
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Typing effect
@@ -78,53 +84,59 @@ const HeroSection = () => {
     if (!mounted) return;
 
     const sequence = async () => {
-      // 1. Animate text content
-      await controls.start("visible");
-      
-      // 2. Animate image sliding in from right
-      await imageControls.start({
-        x: 0,
-        opacity: 1,
-        transition: {
-          duration: 0.8,
-          ease: [0.6, -0.05, 0.01, 0.99]
-        }
-      });
-      
-      // 3. Animate tech icons one by one with delay
-      for (let i = 0; i < techIcons.length; i++) {
-        techControls.start(idx => {
-          if (idx === i) {
-            return {
-              opacity: [0, 1],
-              scale: [0, 1.2, 1],
-              transition: {
-                duration: 0.6,
-                delay: i * 0.15,
-                ease: "backOut"
-              }
-            };
+      try {
+        // 1. Animate text content
+        await controls.start("visible");
+        
+        // 2. Animate image sliding in from right
+        await imageControls.start({
+          x: 0,
+          opacity: 1,
+          transition: {
+            duration: 0.8,
+            ease: [0.6, -0.05, 0.01, 0.99]
           }
-          return {};
         });
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
-      
-      // 4. Start random popping after initial animation
-      startRandomPopAnimation();
-      
-      // 5. Animate social buttons
-      socialControls.start(i => ({
-        opacity: 1,
-        y: 0,
-        x: 0,
-        transition: {
-          delay: 0.5 + i * 0.2,
-          type: "spring",
-          damping: 10,
-          stiffness: 100
+        
+        // 3. Animate tech icons one by one with delay
+        for (let i = 0; i < techIcons.length; i++) {
+          if (!mounted) return;
+          
+          techControls.start(idx => {
+            if (idx === i) {
+              return {
+                opacity: [0, 1],
+                scale: [0, 1.2, 1],
+                transition: {
+                  duration: 0.6,
+                  delay: i * 0.15,
+                  ease: "backOut"
+                }
+              };
+            }
+            return {};
+          });
+          await new Promise(resolve => setTimeout(resolve, 150));
         }
-      }));
+        
+        // 4. Start random popping after initial animation
+        startRandomPopAnimation();
+        
+        // 5. Animate social buttons
+        socialControls.start(i => ({
+          opacity: 1,
+          y: 0,
+          x: 0,
+          transition: {
+            delay: 0.5 + i * 0.2,
+            type: "spring",
+            damping: 10,
+            stiffness: 100
+          }
+        }));
+      } catch (error) {
+        console.error("Animation error:", error);
+      }
     };
     
     sequence();
@@ -181,7 +193,7 @@ const HeroSection = () => {
       });
       
       const nextDelay = 1000 + Math.random() * 2000;
-      setTimeout(animateRandomIcons, nextDelay);
+      animationTimeoutRef.current = setTimeout(animateRandomIcons, nextDelay);
     };
     
     animateRandomIcons();

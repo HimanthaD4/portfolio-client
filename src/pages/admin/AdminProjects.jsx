@@ -5,6 +5,416 @@ import { FiLayers, FiCode, FiDatabase, FiCpu, FiSmartphone, FiMonitor, FiPackage
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence } from "framer-motion";
+import { FaExclamationCircle, FaCheck } from "react-icons/fa";
+import styled from 'styled-components';
+
+// Styled Components with Professional Dark Theme
+const PageContainer = styled.div`
+  min-height: 100vh;
+  background-color: #0f172a;
+  padding: 2rem;
+`;
+
+const Container = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  margin-top: 80px;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const Title = styled.h1`
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #f8fafc;
+`;
+
+
+const NotificationBox = styled(motion.div)`
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+`;
+
+const ErrorBox = styled(NotificationBox)`
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+  color: #fca5a5;
+`;
+
+const SuccessBox = styled(NotificationBox)`
+  background-color: rgba(16, 185, 129, 0.1);
+  border-left: 4px solid #10b981;
+  color: #6ee7b7;
+`;
+
+const Card = styled(motion.div)`
+  background-color: #1e293b;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  border: 1px solid #334155;
+  margin-bottom: 1.5rem;
+`;
+
+const CardHeader = styled.div`
+  padding: 1rem 1.5rem;
+  background-color: #1e40af;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const CardTitle = styled.h2`
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+`;
+
+const FormContainer = styled.div`
+  padding: 1.5rem;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e2e8f0;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+  }
+
+  &::placeholder {
+    color: #64748b;
+  }
+
+  ${props => props.hasError && `
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  `}
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 0.375rem;
+  min-height: 120px;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+  }
+
+  ${props => props.hasError && `
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  `}
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+  }
+`;
+
+const ErrorText = styled.p`
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #fca5a5;
+`;
+
+const TagContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #334155;
+  border-radius: 0.375rem;
+  min-height: 3rem;
+`;
+
+const Tag = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background-color: #1e40af;
+  color: #e2e8f0;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+`;
+
+const RemoveTagButton = styled.button`
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  padding: 0;
+`;
+
+const FileInputLabel = styled.label`
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #1e40af;
+  color: #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #1e3a8a;
+  }
+`;
+
+const ImagePreview = styled.img`
+  width: 5rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 1px solid #334155;
+  cursor: pointer;
+`;
+
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+`;
+
+const PrimaryButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #1e40af;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #1e3a8a;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const SecondaryButton = styled(motion.button)`
+  padding: 0.75rem 1.5rem;
+  background-color: #334155;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #475569;
+  }
+`;
+
+const ProjectItem = styled(motion.div)`
+  padding: 1.5rem;
+  border-bottom: 1px solid #334155;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #334155;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ProjectTitle = styled.h3`
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ProjectCategory = styled.p`
+  font-size: 0.875rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const ProjectDescription = styled.p`
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+`;
+
+const TagList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+`;
+
+const ProjectTag = styled.span`
+  padding: 0.25rem 0.75rem;
+  background-color: #1e40af;
+  color: #e2e8f0;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+`;
+
+const ActionButton = styled(motion.button)`
+  padding: 0.5rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #334155;
+  }
+
+  ${props => props.variant === 'edit' && `
+    color: #93c5fd;
+    &:hover {
+      color: #60a5fa;
+    }
+  `}
+
+  ${props => props.variant === 'delete' && `
+    color: #fca5a5;
+    &:hover {
+      color: #f87171;
+    }
+  `}
+`;
+
+const EmptyState = styled.div`
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+`;
+
+const ModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+`;
+
+const ModalContent = styled.div`
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+`;
+
+const CloseModalButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const AdminProjects = () => {
   const { isAuthenticated, isAdmin } = useContext(AuthContext);
@@ -18,8 +428,7 @@ const AdminProjects = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
-
-  const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
   const techTags = [
     'React', 'Express', 'MongoDB', 'Node.js', 'SQL', 
@@ -49,441 +458,13 @@ const AdminProjects = () => {
   });
 
   const categoryIcons = {
-    web: <FiLayers />,
-    ai: <FiCpu />,
-    mobile: <FiSmartphone />,
-    desktop: <FiMonitor />,
-    game: <FiPackage />,
-    embedded: <FiCode />,
-    other: <FiDatabase />
-  };
-
-  const styles = {
-    pageContainer: {
-      minHeight: '100vh',
-      backgroundColor: '#f8fafc',
-      padding: '32px 16px'
-    },
-    container: {
-      maxWidth: '1400px',
-      margin: '0 auto'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '32px'
-    },
-    backButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '8px 16px',
-      backgroundColor: '#ffffff',
-      color: '#1e40af',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease'
-    },
-    backButtonHover: {
-      backgroundColor: '#f0f7ff'
-    },
-    title: {
-      fontSize: '24px',
-      fontWeight: '600',
-      color: '#1e40af'
-    },
-    statusContainer: {
-      marginBottom: '24px'
-    },
-    errorBox: {
-      padding: '16px',
-      backgroundColor: '#fef2f2',
-      borderLeft: '4px solid #ef4444',
-      color: '#b91c1c',
-      borderRadius: '4px',
-      marginBottom: '16px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    successBox: {
-      padding: '16px',
-      backgroundColor: '#f0fdf4',
-      borderLeft: '4px solid #10b981',
-      color: '#065f46',
-      borderRadius: '4px',
-      marginBottom: '16px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    formContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      marginBottom: '32px',
-      overflow: 'hidden'
-    },
-    formHeader: {
-      padding: '16px 24px',
-      borderBottom: '1px solid #e5e7eb',
-      backgroundColor: '#1e40af',
-      color: 'white'
-    },
-    formTitle: {
-      fontSize: '18px',
-      fontWeight: '600'
-    },
-    formContent: {
-      padding: '24px'
-    },
-    grid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '24px',
-      marginBottom: '24px'
-    },
-    formGroup: {
-      marginBottom: '16px'
-    },
-    label: {
-      display: 'block',
-      marginBottom: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      color: '#374151'
-    },
-    input: {
-      width: '100%',
-      padding: '10px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      transition: 'all 0.2s ease'
-    },
-    inputError: {
-      borderColor: '#ef4444',
-      boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.1)'
-    },
-    inputFocus: {
-      borderColor: '#1e40af',
-      boxShadow: '0 0 0 3px rgba(30, 64, 175, 0.1)'
-    },
-    errorText: {
-      marginTop: '4px',
-      fontSize: '12px',
-      color: '#ef4444'
-    },
-    textarea: {
-      width: '100%',
-      minHeight: '120px',
-      padding: '10px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      transition: 'all 0.2s ease'
-    },
-    charCount: {
-      marginTop: '4px',
-      fontSize: '12px',
-      color: '#6b7280'
-    },
-    imageUpload: {
-      marginBottom: '16px'
-    },
-    fileInputLabel: {
-      display: 'inline-block',
-      padding: '8px 16px',
-      backgroundColor: '#eff6ff',
-      color: '#1e40af',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      marginRight: '16px',
-      transition: 'all 0.2s ease'
-    },
-    fileInputLabelHover: {
-      backgroundColor: '#dbeafe'
-    },
-    imagePreviewContainer: {
-      position: 'relative',
-      display: 'inline-block'
-    },
-    imagePreview: {
-      width: '64px',
-      height: '64px',
-      objectFit: 'cover',
-      borderRadius: '6px',
-      border: '1px solid #e5e7eb',
-      cursor: 'pointer'
-    },
-    removeImageButton: {
-      position: 'absolute',
-      top: '-8px',
-      right: '-8px',
-      width: '20px',
-      height: '20px',
-      backgroundColor: '#ef4444',
-      color: '#ffffff',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      border: 'none'
-    },
-    buttonGroup: {
-      display: 'flex',
-      gap: '16px'
-    },
-    submitButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
-      padding: '10px 20px',
-      backgroundColor: '#1e40af',
-      color: '#ffffff',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease'
-    },
-    submitButtonHover: {
-      backgroundColor: '#1e3a8a'
-    },
-    submitButtonDisabled: {
-      opacity: '0.7',
-      cursor: 'not-allowed'
-    },
-    cancelButton: {
-      padding: '10px 20px',
-      backgroundColor: '#e5e7eb',
-      color: '#374151',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease'
-    },
-    cancelButtonHover: {
-      backgroundColor: '#d1d5db'
-    },
-    projectsListContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      overflow: 'hidden'
-    },
-    listHeader: {
-      padding: '16px 24px',
-      borderBottom: '1px solid #e5e7eb',
-      backgroundColor: '#1e40af',
-      color: 'white'
-    },
-    listTitle: {
-      fontSize: '18px',
-      fontWeight: '600'
-    },
-    emptyState: {
-      padding: '32px',
-      textAlign: 'center',
-      color: '#6b7280'
-    },
-    projectItem: {
-      padding: '16px 24px',
-      borderBottom: '1px solid #e5e7eb',
-      transition: 'all 0.2s ease'
-    },
-    projectItemHover: {
-      backgroundColor: '#f9fafb'
-    },
-    projectContent: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px'
-    },
-    projectRow: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px'
-    },
-    projectImage: {
-      width: '80px',
-      height: '80px',
-      objectFit: 'cover',
-      borderRadius: '6px',
-      border: '1px solid #e5e7eb'
-    },
-    projectDetails: {
-      flex: '1'
-    },
-    projectTitle: {
-      fontSize: '16px',
-      fontWeight: '600',
-      color: '#111827',
-      marginBottom: '4px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
-    },
-    projectCategory: {
-      fontSize: '14px',
-      color: '#6b7280',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px'
-    },
-    projectDescription: {
-      fontSize: '14px',
-      color: '#4b5563',
-      lineHeight: '1.5'
-    },
-    projectTags: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      marginTop: '8px'
-    },
-    tag: {
-      padding: '4px 8px',
-      backgroundColor: '#e0e7ff',
-      color: '#4338ca',
-      borderRadius: '999px',
-      fontSize: '12px'
-    },
-    projectActions: {
-      display: 'flex',
-      gap: '8px'
-    },
-    actionButton: {
-      padding: '8px',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#6b7280',
-      transition: 'all 0.2s ease'
-    },
-    editButtonHover: {
-      color: '#1e40af'
-    },
-    deleteButtonHover: {
-      color: '#ef4444'
-    },
-    modalOverlay: {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: '50',
-      padding: '16px'
-    },
-    modalContent: {
-      position: 'relative',
-      maxWidth: '90vw',
-      maxHeight: '90vh'
-    },
-    modalImage: {
-      maxWidth: '100%',
-      maxHeight: '80vh',
-      objectFit: 'contain'
-    },
-    closeButton: {
-      position: 'absolute',
-      top: '16px',
-      right: '16px',
-      width: '32px',
-      height: '32px',
-      backgroundColor: '#ef4444',
-      color: '#ffffff',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      border: 'none'
-    },
-    loadingContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      backgroundColor: '#f8fafc'
-    },
-    spinner: {
-      color: '#1e40af',
-      animation: 'spin 1s linear infinite'
-    },
-    loadingText: {
-      marginTop: '16px',
-      color: '#6b7280'
-    },
-    featuredToggle: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      cursor: 'pointer'
-    },
-    featuredIcon: {
-      color: '#f59e0b'
-    },
-    tagsDropdown: {
-      position: 'relative',
-      marginBottom: '16px'
-    },
-    tagsInput: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      padding: '8px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      minHeight: '42px'
-    },
-    tagPill: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '4px 8px',
-      backgroundColor: '#e0e7ff',
-      color: '#4338ca',
-      borderRadius: '999px',
-      fontSize: '12px'
-    },
-    removeTag: {
-      marginLeft: '4px',
-      cursor: 'pointer'
-    },
-    dropdownMenu: {
-      position: 'absolute',
-      top: '100%',
-      left: '0',
-      right: '0',
-      maxHeight: '200px',
-      overflowY: 'auto',
-      backgroundColor: 'white',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      zIndex: '10'
-    },
-    dropdownItem: {
-      padding: '8px 16px',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
-    },
-    dropdownItemHover: {
-      backgroundColor: '#f3f4f6'
-    },
-    dropdownItemSelected: {
-      backgroundColor: '#e0e7ff'
-    }
+    web: <FiLayers className="text-blue-400" />,
+    ai: <FiCpu className="text-blue-400" />,
+    mobile: <FiSmartphone className="text-blue-400" />,
+    desktop: <FiMonitor className="text-blue-400" />,
+    game: <FiPackage className="text-blue-400" />,
+    embedded: <FiCode className="text-blue-400" />,
+    other: <FiDatabase className="text-blue-400" />
   };
 
   useEffect(() => {
@@ -603,6 +584,10 @@ const AdminProjects = () => {
 
   const toggleFeatured = () => {
     setFormData(prev => ({ ...prev, featured: !prev.featured }));
+  };
+
+  const toggleShowFeaturedOnly = () => {
+    setShowFeaturedOnly(prev => !prev);
   };
 
   const handleTagSelect = (tag) => {
@@ -728,145 +713,150 @@ const AdminProjects = () => {
     });
   };
 
+  const filteredProjects = showFeaturedOnly 
+    ? projects.filter(project => project.featured)
+    : projects;
+
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <FaSpinner style={styles.spinner} size={32} />
-        <p style={styles.loadingText}>Loading projects...</p>
-      </div>
+      <PageContainer>
+        <Container>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '50vh' 
+          }}>
+            <FaSpinner className="animate-spin" size={32} color="#60a5fa" />
+          </div>
+        </Container>
+      </PageContainer>
     );
   }
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <motion.button
-            style={styles.backButton}
-            whileHover={styles.backButtonHover}
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            <FaArrowLeft /> Back to Dashboard
-          </motion.button>
-          <h1 style={styles.title}>Projects Management</h1>
-          <div style={{ width: '40px' }}></div>
+    <PageContainer>
+      <Container>
+       
+        <div className="mb-6">
+          <AnimatePresence>
+            {error && (
+              <ErrorBox
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FaExclamationCircle />
+                  <span>{error}</span>
+                </div>
+                <button 
+                  onClick={() => setError(null)} 
+                  style={{ background: 'none', border: 'none', color: 'inherit' }}
+                >
+                  <FaTimes />
+                </button>
+              </ErrorBox>
+            )}
+
+            {success && (
+              <SuccessBox
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FaCheck />
+                  <span>{success}</span>
+                </div>
+                <button 
+                  onClick={() => setSuccess(null)} 
+                  style={{ background: 'none', border: 'none', color: 'inherit' }}
+                >
+                  <FaTimes />
+                </button>
+              </SuccessBox>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div style={styles.statusContainer}>
-          {error && (
-            <motion.div 
-              style={styles.errorBox}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>{error}</p>
-              <button 
-                onClick={() => setError(null)} 
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <FaTimes />
-              </button>
-            </motion.div>
-          )}
-
-          {success && (
-            <motion.div 
-              style={styles.successBox}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>{success}</p>
-              <button 
-                onClick={() => setSuccess(null)} 
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <FaTimes />
-              </button>
-            </motion.div>
-          )}
-        </div>
-
-        <motion.div 
-          style={styles.formContainer}
+        <Card
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div style={styles.formHeader}>
-            <h2 style={styles.formTitle}>
+          <CardHeader>
+            <CardTitle>
               {isEditing ? 'Edit Project' : 'Add New Project'}
-            </h2>
-          </div>
+            </CardTitle>
+          </CardHeader>
           
-          <form onSubmit={handleSubmit} style={styles.formContent}>
-            <div style={styles.grid}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Title*</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
+          <FormContainer>
+            <form onSubmit={handleSubmit}>
+              <FormGrid>
+                <FormGroup>
+                  <Label>Title*</Label>
+                  <Input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    hasError={!!errors.title}
+                  />
+                  {errors.title && <ErrorText>{errors.title}</ErrorText>}
+                </FormGroup>
+                
+                <FormGroup>
+                  <Label>Category*</Label>
+                  <Select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                  >
+                    <option value="web">Web Development</option>
+                    <option value="ai">AI/ML Project</option>
+                    <option value="mobile">Mobile App</option>
+                    <option value="desktop">Desktop App</option>
+                    <option value="game">Game Development</option>
+                    <option value="embedded">Embedded Systems</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </FormGroup>
+              </FormGrid>
+
+              <FormGroup>
+                <Label>Description*</Label>
+                <TextArea
+                  name="description"
+                  value={formData.description}
                   onChange={handleInputChange}
-                  style={{
-                    ...styles.input,
-                    ...(errors.title ? styles.inputError : {})
-                  }}
+                  hasError={!!errors.description}
                 />
-                {errors.title && <p style={styles.errorText}>{errors.title}</p>}
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Category*</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                >
-                  <option value="web">Web Development</option>
-                  <option value="ai">AI/ML Project</option>
-                  <option value="mobile">Mobile App</option>
-                  <option value="desktop">Desktop App</option>
-                  <option value="game">Game Development</option>
-                  <option value="embedded">Embedded Systems</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
+                {errors.description && <ErrorText>{errors.description}</ErrorText>}
+                <p className="text-sm text-blue-400">
+                  {formData.description.length}/2000 characters
+                </p>
+              </FormGroup>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Description*</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows="4"
-                style={{
-                  ...styles.textarea,
-                  ...(errors.description ? styles.inputError : {})
-                }}
-              />
-              {errors.description && <p style={styles.errorText}>{errors.description}</p>}
-              <p style={styles.charCount}>
-                {formData.description.length}/2000 characters
-              </p>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Tags*</label>
-              <div style={styles.tagsDropdown}>
-                <div style={styles.tagsInput}>
+              <FormGroup>
+                <Label>Tags*</Label>
+                <TagContainer>
                   {formData.tags.map(tag => (
-                    <div key={tag} style={styles.tagPill}>
+                    <Tag key={tag}>
                       {tag}
-                      <span style={styles.removeTag} onClick={() => removeTag(tag)}>
+                      <RemoveTagButton
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                      >
                         <FaTimes size={10} />
-                      </span>
-                    </div>
+                      </RemoveTagButton>
+                    </Tag>
                   ))}
                   <select
                     onChange={(e) => handleTagSelect(e.target.value)}
-                    style={{ border: 'none', outline: 'none' }}
+                    className="border-none outline-none bg-transparent text-blue-400"
                     value=""
                   >
                     <option value="">Select a tag...</option>
@@ -874,291 +864,268 @@ const AdminProjects = () => {
                       <option key={tag} value={tag}>{tag}</option>
                     ))}
                   </select>
-                </div>
-                {errors.tags && <p style={styles.errorText}>{errors.tags}</p>}
-              </div>
-            </div>
+                </TagContainer>
+                {errors.tags && <ErrorText>{errors.tags}</ErrorText>}
+              </FormGroup>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Featured Project</label>
-              <div style={styles.featuredToggle} onClick={toggleFeatured}>
-                {formData.featured ? (
-                  <FaStar style={styles.featuredIcon} size={20} />
-                ) : (
-                  <FaRegStar style={styles.featuredIcon} size={20} />
-                )}
-                <span>{formData.featured ? 'Featured' : 'Not Featured'}</span>
-              </div>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Project Image</label>
-              <div style={styles.imageUpload}>
-                <label style={styles.fileInputLabel}>
-                  Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                {imagePreview && (
-                  <div style={styles.imagePreviewContainer}>
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      style={styles.imagePreview}
-                      onClick={() => setShowImageModal(true)}
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      style={styles.removeImageButton}
-                      aria-label="Remove image"
-                    >
-                      <FaTimes size={10} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div style={styles.grid}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>GitHub URL</label>
-                <input
-                  type="url"
-                  name="github"
-                  value={formData.github}
-                  onChange={handleInputChange}
-                  placeholder="https://github.com/username/repo"
-                  style={{
-                    ...styles.input,
-                    ...(errors.github ? styles.inputError : {})
-                  }}
-                />
-                {errors.github && <p style={styles.errorText}>{errors.github}</p>}
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Live Demo URL</label>
-                <input
-                  type="url"
-                  name="live"
-                  value={formData.live}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com"
-                  style={{
-                    ...styles.input,
-                    ...(errors.live ? styles.inputError : {})
-                  }}
-                />
-                {errors.live && <p style={styles.errorText}>{errors.live}</p>}
-              </div>
-            </div>
-
-            <div style={styles.buttonGroup}>
-              <motion.button
-                type="submit"
-                style={{
-                  ...styles.submitButton,
-                  ...(isSubmitting ? styles.submitButtonDisabled : {})
-                }}
-                whileHover={isSubmitting ? {} : styles.submitButtonHover}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
-                    {isEditing ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : (
-                  <>
-                    <FaPlus />
-                    {isEditing ? 'Update Project' : 'Create Project'}
-                  </>
-                )}
-              </motion.button>
-              
-              {isEditing && (
-                <motion.button
-                  type="button"
-                  style={styles.cancelButton}
-                  whileHover={styles.cancelButtonHover}
-                  onClick={resetForm}
+              <FormGroup>
+                <Label>Featured Project</Label>
+                <div 
+                  className="flex items-center gap-2 cursor-pointer text-blue-400"
+                  onClick={toggleFeatured}
                 >
-                  Cancel
-                </motion.button>
-              )}
-            </div>
-          </form>
-        </motion.div>
+                  {formData.featured ? (
+                    <FaStar className="text-yellow-400" size={20} />
+                  ) : (
+                    <FaRegStar size={20} />
+                  )}
+                  <span>{formData.featured ? 'Featured' : 'Not Featured'}</span>
+                </div>
+              </FormGroup>
 
-        <motion.div 
-          style={styles.projectsListContainer}
+              <FormGroup>
+                <Label>Project Image</Label>
+                <div className="flex items-center gap-4">
+                  <FileInputLabel>
+                    Choose File
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </FileInputLabel>
+                  {imagePreview && (
+                    <div className="relative inline-block">
+                      <ImagePreview 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        onClick={() => setShowImageModal(true)}
+                      />
+                      <RemoveImageButton
+                        type="button"
+                        onClick={removeImage}
+                        aria-label="Remove image"
+                      >
+                        <FaTimes size={10} />
+                      </RemoveImageButton>
+                    </div>
+                  )}
+                </div>
+              </FormGroup>
+
+              <FormGrid>
+                <FormGroup>
+                  <Label>GitHub URL</Label>
+                  <Input
+                    type="url"
+                    name="github"
+                    value={formData.github}
+                    onChange={handleInputChange}
+                    placeholder="https://github.com/username/repo"
+                    hasError={!!errors.github}
+                  />
+                  {errors.github && <ErrorText>{errors.github}</ErrorText>}
+                </FormGroup>
+                
+                <FormGroup>
+                  <Label>Live Demo URL</Label>
+                  <Input
+                    type="url"
+                    name="live"
+                    value={formData.live}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com"
+                    hasError={!!errors.live}
+                  />
+                  {errors.live && <ErrorText>{errors.live}</ErrorText>}
+                </FormGroup>
+              </FormGrid>
+
+              <ButtonGroup>
+                <PrimaryButton
+                  type="submit"
+                  whileHover={isSubmitting ? {} : { scale: 1.02 }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      {isEditing ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus />
+                      {isEditing ? 'Update Project' : 'Create Project'}
+                    </>
+                  )}
+                </PrimaryButton>
+                
+                {isEditing && (
+                  <SecondaryButton
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    onClick={resetForm}
+                  >
+                    Cancel
+                  </SecondaryButton>
+                )}
+              </ButtonGroup>
+            </form>
+          </FormContainer>
+        </Card>
+
+        <Card 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <div style={styles.listHeader}>
-            <h2 style={styles.listTitle}>All Projects ({projects.length})</h2>
-          </div>
-          
-          {projects.length === 0 ? (
-            <div style={styles.emptyState}>
-              No projects found. Create your first project above.
+          <CardHeader>
+            <CardTitle>
+              {showFeaturedOnly ? 'Featured Projects' : 'All Projects'} ({filteredProjects.length})
+            </CardTitle>
+            <div 
+              className="flex items-center gap-2 cursor-pointer text-blue-200 hover:text-white"
+              onClick={toggleShowFeaturedOnly}
+            >
+              {showFeaturedOnly ? (
+                <FaStar className="text-yellow-300" />
+              ) : (
+                <FaRegStar />
+              )}
+              <span>{showFeaturedOnly ? 'Show All' : 'Show Featured'}</span>
             </div>
+          </CardHeader>
+          
+          {filteredProjects.length === 0 ? (
+            <EmptyState>
+              {showFeaturedOnly 
+                ? 'No featured projects found.' 
+                : 'No projects found. Create your first project above.'}
+            </EmptyState>
           ) : (
             <div>
-              {projects.map((project) => (
-                <motion.div
+              {filteredProjects.map((project) => (
+                <ProjectItem
                   key={project._id}
-                  style={styles.projectItem}
-                  whileHover={styles.projectItemHover}
+                  whileHover={{ backgroundColor: '#334155' }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div style={styles.projectContent}>
-                    <div style={styles.projectRow}>
-                      {project.image && project.image.data ? (
-                        <img
-                          src={`data:${project.image.contentType};base64,${project.image.data}`}
-                          alt={project.title}
-                          style={styles.projectImage}
-                          onClick={() => {
-                            setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
-                            setShowImageModal(true);
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          ...styles.projectImage,
-                          backgroundColor: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#9ca3af'
-                        }}>
-                          No Image
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {project.image && project.image.data ? (
+                      <img
+                        src={`data:${project.image.contentType};base64,${project.image.data}`}
+                        alt={project.title}
+                        className="w-20 h-20 object-cover rounded-lg border border-blue-200 cursor-pointer"
+                        onClick={() => {
+                          setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
+                          setShowImageModal(true);
+                        }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-blue-900 rounded-lg border border-blue-800 flex items-center justify-center text-blue-400">
+                        No Image
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                        <div>
+                          <ProjectTitle>
+                            {project.featured && <FaStar className="text-yellow-400" />}
+                            {project.title}
+                          </ProjectTitle>
+                          <ProjectCategory>
+                            {categoryIcons[project.category]}
+                            {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
+                          </ProjectCategory>
                         </div>
-                      )}
-                      <div style={styles.projectDetails}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <div>
-                            <h3 style={styles.projectTitle}>
-                              {project.featured && <FaStar style={{ color: '#f59e0b' }} />}
-                              {project.title}
-                            </h3>
-                            <p style={styles.projectCategory}>
-                              {categoryIcons[project.category]}
-                              {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
-                            </p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            {project.github && (
-                              <a 
-                                href={project.github} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                style={{ color: '#6b7280', transition: 'color 0.2s ease' }}
-                              >
-                                <FaExternalLinkAlt />
-                              </a>
-                            )}
-                            {project.live && (
-                              <a 
-                                href={project.live} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                style={{ color: '#6b7280', transition: 'color 0.2s ease' }}
-                              >
-                                <FaExternalLinkAlt />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        <p style={styles.projectDescription}>
-                          {project.description}
-                        </p>
-                        <div style={styles.projectTags}>
-                          {project.tags.map((tag, index) => (
-                            <span key={index} style={styles.tag}>
-                              {tag}
-                            </span>
-                          ))}
+                        <div className="flex gap-3">
+                          {project.github && (
+                            <a 
+                              href={project.github} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 transition-colors"
+                              title="GitHub Repository"
+                            >
+                              <FaExternalLinkAlt />
+                            </a>
+                          )}
+                          {project.live && (
+                            <a 
+                              href={project.live} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 transition-colors"
+                              title="Live Demo"
+                            >
+                              <FaExternalLinkAlt />
+                            </a>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <div style={styles.projectActions}>
-                        <motion.button
-                          onClick={() => handleEdit(project)}
-                          style={styles.actionButton}
-                          whileHover={styles.editButtonHover}
-                          aria-label="Edit project"
-                        >
-                          <FaEdit />
-                        </motion.button>
-                        <motion.button
-                          onClick={() => handleDelete(project._id)}
-                          style={styles.actionButton}
-                          whileHover={styles.deleteButtonHover}
-                          aria-label="Delete project"
-                        >
-                          <FaTrash />
-                        </motion.button>
-                      </div>
+                      <ProjectDescription>
+                        {project.description}
+                      </ProjectDescription>
+                      <TagList>
+                        {project.tags.map((tag, index) => (
+                          <ProjectTag key={index}>
+                            {tag}
+                          </ProjectTag>
+                        ))}
+                      </TagList>
                     </div>
                   </div>
-                </motion.div>
+                  <ActionButtons>
+                    <ActionButton
+                      onClick={() => handleEdit(project)}
+                      variant="edit"
+                      whileHover={{ scale: 1.1 }}
+                      aria-label="Edit project"
+                    >
+                      <FaEdit />
+                    </ActionButton>
+                    <ActionButton
+                      onClick={() => handleDelete(project._id)}
+                      variant="delete"
+                      whileHover={{ scale: 1.1 }}
+                      aria-label="Delete project"
+                    >
+                      <FaTrash />
+                    </ActionButton>
+                  </ActionButtons>
+                </ProjectItem>
               ))}
             </div>
           )}
-        </motion.div>
+        </Card>
 
         {showImageModal && (
-          <motion.div 
-            style={styles.modalOverlay}
+          <ModalOverlay 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setShowImageModal(false)}
           >
-            <div style={styles.modalContent}>
+            <ModalContent>
               <img 
                 src={imagePreview} 
                 alt="Full Preview" 
-                style={styles.modalImage}
+                className="max-w-full max-h-[80vh] object-contain"
                 onClick={(e) => e.stopPropagation()}
               />
-              <button
+              <CloseModalButton
                 onClick={() => setShowImageModal(false)}
-                style={styles.closeButton}
                 aria-label="Close preview"
               >
                 <FaTimes />
-              </button>
-            </div>
-          </motion.div>
+              </CloseModalButton>
+            </ModalContent>
+          </ModalOverlay>
         )}
-      </div>
-
-      <style>
-        {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          
-          input:focus, textarea:focus, select:focus {
-            border-color: #1e40af !important;
-            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
-            outline: none;
-          }
-        `}
-      </style>
-    </div>
+      </Container>
+    </PageContainer>
   );
 };
 
