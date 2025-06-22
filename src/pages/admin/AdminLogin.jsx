@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiLock, FiUser, FiArrowRight } from 'react-icons/fi';
 

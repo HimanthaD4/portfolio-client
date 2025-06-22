@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { Link as ScrollLink } from 'react-scroll';
 import { FaBars, FaTimes, FaFileDownload } from 'react-icons/fa';
-import axios from 'axios';
 
 const SmartNavLink = ({ to, children, activeLink, setActiveLink, linkRefs, scrollSettings, handleMouseEnter, handleMouseLeave, ...props }) => {
   const location = useLocation();
@@ -47,7 +46,7 @@ const SmartNavLink = ({ to, children, activeLink, setActiveLink, linkRefs, scrol
   );
 };
 
-const Navbar = () => {
+const ProjectNavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeLink, setActiveLink] = useState('home');
@@ -75,61 +74,13 @@ const Navbar = () => {
 
   const navItems = [
     { 
-      name: 'Home', 
+      name: 'Back', 
       target: 'home',
       scrollSettings: {
         duration: 600,
         offset: -80
       }
-    },
-    { 
-      name: 'Projects', 
-      target: 'projects',
-      scrollSettings: {
-        duration: 600,
-        offset: -60
-      }
-    },
-    { 
-      name: 'Services', 
-      target: 'services',
-      scrollSettings: {
-        duration: 600,
-        offset: -60
-      }
-    },
-    { 
-      name: 'Skills', 
-      target: 'skills',
-      scrollSettings: {
-        duration: 600,
-        offset: -40
-      }
-    },
-    { 
-      name: 'Process', 
-      target: 'process',
-      scrollSettings: {
-        duration: 1000,  
-        offset: -50   
-      }
-    },
-    { 
-      name: 'About', 
-      target: 'about',
-      scrollSettings: {
-        duration: 600,
-        offset: -80
-      }
-    },
-    { 
-      name: 'Contact', 
-      target: 'contact',
-      scrollSettings: {
-        duration: 800,
-        offset: -60
-      }
-    },
+    }
   ];
 
   const updateUnderline = (linkName) => {
@@ -171,37 +122,37 @@ const Navbar = () => {
   };
 
   const handleDownloadCV = async () => {
-  try {
-    setIsDownloading(true);
-    
-    // 1. Define file paths
-    const cvFilename = 'himantha_cv.pdf';
-    const publicPath = process.env.PUBLIC_URL || '';
-    const cvUrl = `${publicPath}/documents/${cvFilename}`;
+    try {
+      setIsDownloading(true);
+      
+      // 1. Define file paths
+      const cvFilename = 'himantha_cv.pdf';
+      const publicPath = process.env.PUBLIC_URL || '';
+      const cvUrl = `${publicPath}/documents/${cvFilename}`;
 
-    // 2. Create temporary link
-    const link = document.createElement('a');
-    link.href = cvUrl;
-    link.download = `Himantha_Hirushan_CV_${new Date().getFullYear()}.pdf`; // Dynamic filename
-    link.target = '_blank'; // For better cross-browser support
-    
-    // 3. Trigger download
-    document.body.appendChild(link);
-    link.click();
-    
-    // 4. Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(cvUrl);
-    }, 100);
+      // 2. Create temporary link
+      const link = document.createElement('a');
+      link.href = cvUrl;
+      link.download = `Himantha_Hirushan_CV_${new Date().getFullYear()}.pdf`;
+      link.target = '_blank';
+      
+      // 3. Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // 4. Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(cvUrl);
+      }, 100);
 
-  } catch (error) {
-    console.error('Download error:', error);
-    alert('CV download failed. Please contact me directly at your@email.com');
-  } finally {
-    setIsDownloading(false);
-  }
-};
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('CV download failed. Please contact me directly at your@email.com');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <nav style={{
@@ -454,4 +405,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default ProjectNavBar;

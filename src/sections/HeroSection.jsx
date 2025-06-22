@@ -1,18 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-scroll';
 import { motion, useAnimation } from 'framer-motion';
-import { FaGithub, FaLinkedin, FaFacebook, FaChevronDown, FaArrowRight, FaCode, FaTools } from 'react-icons/fa';
+import { 
+  FaGithub, FaLinkedin, FaFacebook, FaChevronDown,
+  FaReact, FaNodeJs, FaPython, FaJava, FaPhp,
+  FaCode, FaHandshake
+} from 'react-icons/fa';
 import { FaWhatsapp } from 'react-icons/fa6';
-import HeroImage from '../components/himantha-cartoon.png'; // Your PNG image
+import { SiLaravel, SiMongodb, SiMysql, SiJavascript, SiTypescript, SiDocker, SiGraphql } from 'react-icons/si';
+
+import HeroImage from '../images/main.png';
 
 const HeroSection = () => {
   const [typedText, setTypedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const controls = useAnimation();
-  const imageRef = useRef();
-  const socialRefs = useRef([]);
-  const techIconsRef = useRef([]);
+  const containerRef = useRef();
+  const socialControls = useAnimation();
+  const techControls = useAnimation();
+  const imageControls = useAnimation();
+  const [mounted, setMounted] = useState(false);
+  const animationTimeoutRef = useRef(null);
 
   const roles = [
     "Himantha Hirushan",
@@ -21,14 +30,33 @@ const HeroSection = () => {
     "ML Specialist",
   ];
 
+  // Tech icons configuration
   const techIcons = [
-    { icon: <FaCode />, name: "React" },
-    { icon: <FaCode />, name: "Node.js" },
-    { icon: <FaCode />, name: "Python" },
-    { icon: <FaTools />, name: "TensorFlow" },
+    { icon: <FaReact color="#61DAFB" />, name: "React", pos: { top: '5%', left: '10%' }, size: 42 },
+    { icon: <FaNodeJs color="#68A063" />, name: "Node.js", pos: { top: '20%', right: '5%' }, size: 40 },
+    { icon: <SiJavascript color="#F7DF1E" />, name: "JavaScript", pos: { bottom: '25%', left: '5%' }, size: 38 },
+    { icon: <SiTypescript color="#3178C6" />, name: "TypeScript", pos: { bottom: '15%', right: '15%' }, size: 38 },
+    { icon: <FaPython color="#3776AB" />, name: "Python", pos: { top: '30%', right: '3%' }, size: 42 },
+    { icon: <FaJava color="#007396" />, name: "Java", pos: { top: '10%', right: '20%' }, size: 38 },
+    { icon: <FaPhp color="#777BB4" />, name: "PHP", pos: { bottom: '30%', right: '5%' }, size: 36 },
+    { icon: <SiLaravel color="#FF2D20" />, name: "Laravel", pos: { top: '35%', left: '5%' }, size: 40 },
+    { icon: <SiMongodb color="#47A248" />, name: "MongoDB", pos: { bottom: '10%', left: '15%' }, size: 38 },
+    { icon: <SiMysql color="#4479A1" />, name: "MySQL", pos: { bottom: '5%', right: '10%' }, size: 36 },
+    { icon: <SiDocker color="#2496ED" />, name: "Docker", pos: { top: '40%', right: '12%' }, size: 42 },
+    { icon: <SiGraphql color="#E535AB" />, name: "GraphQL", pos: { bottom: '35%', left: '20%' }, size: 38 },
   ];
 
-  // Typing animation
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      setMounted(false);
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Typing effect
   useEffect(() => {
     const handleTyping = () => {
       const current = loopNum % roles.length;
@@ -51,104 +79,139 @@ const HeroSection = () => {
     return () => clearTimeout(timer);
   }, [typedText, isDeleting, loopNum]);
 
-  // Entrance animations
+  // Animation sequence
   useEffect(() => {
-    const sequence = async () => {
-      // Text elements enter
-      await controls.start("visible");
+    if (!mounted) return;
 
-      // Image slides in with tech icons
-      if (imageRef.current) {
-        imageRef.current.style.opacity = "1";
-        imageRef.current.style.transform = "translateY(0) rotate(0deg)";
+    const sequence = async () => {
+      try {
+        // 1. Animate text content
+        await controls.start("visible");
         
-        // Animate tech icons around image
-        techIconsRef.current.forEach((icon, i) => {
-          if (icon) {
-            setTimeout(() => {
-              icon.style.transform = "translate(0, 0) scale(1)";
-              icon.style.opacity = "1";
-            }, i * 150 + 500);
+        // 2. Animate image sliding in from right
+        await imageControls.start({
+          x: 0,
+          opacity: 1,
+          transition: {
+            duration: 0.8,
+            ease: [0.6, -0.05, 0.01, 0.99]
           }
         });
-      }
-
-      // Social icons drop in
-      socialRefs.current.forEach((ref, i) => {
-        if (ref) {
-          setTimeout(() => {
-            ref.style.transform = "translateY(0)";
-            ref.style.opacity = "1";
-          }, i * 100 + 800);
+        
+        // 3. Animate tech icons one by one with delay
+        for (let i = 0; i < techIcons.length; i++) {
+          if (!mounted) return;
+          
+          techControls.start(idx => {
+            if (idx === i) {
+              return {
+                opacity: [0, 1],
+                scale: [0, 1.2, 1],
+                transition: {
+                  duration: 0.6,
+                  delay: i * 0.15,
+                  ease: "backOut"
+                }
+              };
+            }
+            return {};
+          });
+          await new Promise(resolve => setTimeout(resolve, 150));
         }
-      });
+        
+        // 4. Start random popping after initial animation
+        startRandomPopAnimation();
+        
+        // 5. Animate social buttons
+        socialControls.start(i => ({
+          opacity: 1,
+          y: 0,
+          x: 0,
+          transition: {
+            delay: 0.5 + i * 0.2,
+            type: "spring",
+            damping: 10,
+            stiffness: 100
+          }
+        }));
+      } catch (error) {
+        console.error("Animation error:", error);
+      }
     };
-
+    
     sequence();
-  }, []);
+
+    return () => {
+      // Clean up animations if component unmounts
+      controls.stop();
+      imageControls.stop();
+      techControls.stop();
+      socialControls.stop();
+    };
+  }, [mounted]);
+
+  // Initialize image off-screen
+  useEffect(() => {
+    if (mounted) {
+      imageControls.start({
+        x: 100,
+        opacity: 0
+      });
+    }
+  }, [mounted]);
+
+  // Random popping animation for tech icons
+  const startRandomPopAnimation = () => {
+    if (!mounted) return;
+
+    const animateRandomIcons = () => {
+      if (!mounted) return;
+
+      const visibleIcons = techIcons.map((_, index) => index);
+      const iconsToAnimate = [];
+      const count = 2 + Math.floor(Math.random() * 2);
+      
+      for (let i = 0; i < count; i++) {
+        if (visibleIcons.length === 0) break;
+        const randomIndex = Math.floor(Math.random() * visibleIcons.length);
+        iconsToAnimate.push(visibleIcons.splice(randomIndex, 1)[0]);
+      }
+      
+      iconsToAnimate.forEach(index => {
+        techControls.start(i => {
+          if (i === index) {
+            return {
+              scale: [1, 1.4, 1],
+              transition: {
+                duration: 0.6,
+                ease: "backOut"
+              }
+            };
+          }
+          return {};
+        });
+      });
+      
+      const nextDelay = 1000 + Math.random() * 2000;
+      animationTimeoutRef.current = setTimeout(animateRandomIcons, nextDelay);
+    };
+    
+    animateRandomIcons();
+  };
 
   return (
     <section 
       id="home" 
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        padding: '100px 2rem 80px',
-        background: 'radial-gradient(ellipse at top right, #1e293b, #0f172a)',
-      }}
+      ref={containerRef}
+      className="hero-section"
     >
-      {/* Decorative glow elements */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        style={{
-          position: 'absolute',
-          top: '20%',
-          right: '10%',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-          zIndex: 0,
-        }} 
-      />
-      
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5, delay: 0.5 }}
-        style={{
-          position: 'absolute',
-          bottom: '30%',
-          left: '15%',
-          width: '300px',
-          height: '300px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%)',
-          filter: 'blur(50px)',
-          zIndex: 0,
-        }} 
-      />
-      
       {/* Content Container */}
-      <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 10,
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        gap: '2rem',
-      }}>
-        {/* Text Content (Left Side) */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="hero-container"
+      >
+        {/* Text Content */}
         <motion.div 
           initial={{ opacity: 0, y: 40 }}
           animate={controls}
@@ -162,38 +225,12 @@ const HeroSection = () => {
               }
             }
           }}
-          style={{
-            flex: '1',
-            minWidth: '300px',
-            maxWidth: '600px',
-            padding: '0 1rem',
-          }}
+          className="hero-text"
         >
-          <motion.h1 
-            style={{
-              fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-              fontWeight: 800,
-              color: '#fff',
-              marginBottom: '1rem',
-              lineHeight: 1.15,
-            }}
-          >
-            Hi, I'm <span style={{ 
-              background: 'linear-gradient(135deg, #f97316, #f59e0b)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: 800,
-            }}> 
+          <motion.h1 className="hero-title">
+            Hi, I'm <span className="gradient-text"> 
             {typedText}
-            <span style={{
-              display: 'inline-block',
-              width: '10px',
-              height: '4.2rem',
-              marginLeft: '4px',
-              background: '#f97316',
-              verticalAlign: 'text-bottom',
-              animation: 'blink 1s infinite',
-            }}></span>
+            <span className="blinking-cursor"></span>
           </span>
           </motion.h1>
           
@@ -201,52 +238,26 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            style={{
-              fontSize: '1.1rem',
-              color: '#cbd5e1',
-              maxWidth: '500px',
-              marginBottom: '2.5rem',
-              lineHeight: 1.6,
-            }}
+            className="hero-subtitle"
           >
-            Crafting digital experiences that blend innovation with intuitive design.
+             I build high-performance web applications with clean code and intuitive experiences.
           </motion.p>
           
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            marginBottom: '3rem',
-          }}>
+          <div className="hero-buttons">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
               <Link
                 to="projects"
                 smooth={true}
                 duration={700}
-                style={{
-                  padding: '1rem 2rem',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #f97316 0%, #f59e0b 100%)',
-                  color: 'white',
-                  boxShadow: '0 6px 20px rgba(249, 115, 22, 0.35)',
-                  textDecoration: 'none',
-                  fontSize: '1.1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
+                className="primary-button"
               >
-                Discover My Work <FaArrowRight />
+                <FaCode className="button-icon" /> View My Work
               </Link>
             </motion.div>
             
@@ -254,260 +265,136 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
               <Link
                 to="contact"
                 smooth={true}
                 duration={700}
-                style={{
-                  padding: '1rem 2rem',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  cursor: 'pointer',
-                  border: '2px solid rgba(249, 115, 22, 0.4)',
-                  color: 'white',
-                  textDecoration: 'none',
-                  fontSize: '1.1rem',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
+                className="hire-button"
               >
-                Let's Build Together <FaArrowRight />
+                <FaHandshake className="button-icon" /> Let's Collaborate
               </Link>
             </motion.div>
           </div>
           
           {/* Social Links */}
-          <div style={{
-            display: 'flex',
-            gap: '1.5rem',
-            position: 'relative',
-            height: '50px',
-          }}>
+          <motion.div
+            className="social-links"
+          >
             {[
-              { icon: <FaGithub />, url: 'https://github.com/HimanthaD4', label: 'GitHub' },
-              { icon: <FaLinkedin />, url: 'https://www.linkedin.com/in/himantha-hirushan-390122212/', label: 'LinkedIn' },
-              { icon: <FaFacebook />, url: 'https://web.facebook.com/himantha.hirushan.71', label: 'Facebook' },
-              { icon: <FaWhatsapp />, url: 'https://wa.me/94768840107', label: 'WhatsApp' }
+              { icon: <FaGithub />, url: 'https://github.com/HimanthaD4', label: 'GitHub', initialPos: { y: 50, x: -20 } },
+              { icon: <FaLinkedin />, url: 'https://www.linkedin.com/in/himantha-hirushan-390122212/', label: 'LinkedIn', initialPos: { y: 30, x: 20 } },
+              { icon: <FaFacebook />, url: 'https://web.facebook.com/himantha.hirushan.71', label: 'Facebook', initialPos: { y: 40, x: -10 } },
+              { icon: <FaWhatsapp />, url: 'https://wa.me/94768840107', label: 'WhatsApp', initialPos: { y: 60, x: 10 } }
             ].map((social, index) => (
-              <a 
+              <motion.a
                 key={index}
-                ref={el => socialRefs.current[index] = el}
+                custom={index}
+                initial={{ opacity: 0, y: social.initialPos.y, x: social.initialPos.x }}
+                animate={socialControls}
                 href={social.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                style={{
-                  color: '#94a3b8',
-                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  fontSize: '1.4rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  position: 'relative',
-                  left: 0,
-                  top: 0,
-                  opacity: 0,
-                  transform: 'translateY(-100px)',
+                className="social-icon"
+                whileHover={{ 
+                  color: '#f97316',
+                  backgroundColor: '#1e293b',
+                  borderColor: '#1e293b',
+                  y: -5,
+                  scale: 1.1,
                 }}
-                onMouseEnter={e => {
-                  e.target.style.color = '#f97316';
-                  e.target.style.backgroundColor = 'rgba(249, 115, 22, 0.15)';
-                  e.target.style.borderColor = 'rgba(249, 115, 22, 0.3)';
-                  e.target.style.transform = 'translateY(-5px) scale(1.1)';
-                }}
-                onMouseLeave={e => {
-                  e.target.style.color = '#94a3b8';
-                  e.target.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
-                  e.target.style.borderColor = 'rgba(255,255,255,0.08)';
-                  e.target.style.transform = 'translateY(0) scale(1)';
-                }}
+                whileTap={{ scale: 0.9 }}
                 aria-label={social.label}
               >
                 {social.icon}
-              </a>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
         
-        {/* Image Container (Right Side) */}
+        {/* Image Container with Tech Icons */}
         <motion.div 
-          style={{
-            flex: '1',
-            minWidth: '300px',
-            maxWidth: '400px',
-            padding: '2rem',
-            display: 'flex',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
+          className="hero-image-container"
         >
-          <motion.div
-            ref={imageRef}
-            style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '350px',
-              opacity: 0,
-              transform: 'translateY(50px) rotate(-5deg)',
-              transition: 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            }}
-            animate={{
-              y: [0, -15, 0],
-            }}
-            transition={{
-              duration: 6,
-              ease: "easeInOut",
-              repeat: Infinity,
-              repeatType: "reverse",
-              delay: 0.8
-            }}
+          <motion.div 
+            className="image-wrapper"
+            initial={{ x: 100, opacity: 0 }}
+            animate={imageControls}
           >
             <motion.img 
               src={HeroImage} 
               alt="Himantha Hirushan" 
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block',
-                position: 'relative',
-                zIndex: 2,
-                borderRadius: '20px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              }}
+              className="profile-image"
             />
             
-            {/* Technology icons floating around */}
-            {techIcons.map((tech, index) => {
-              const positions = [
-                { top: '-10%', left: '20%' },
-                { top: '20%', right: '-10%' },
-                { bottom: '10%', left: '-10%' },
-                { bottom: '-10%', right: '20%' },
-              ];
-              
-              return (
+            {/* Animated Tech Icons - Initially hidden */}
+            <motion.div className="tech-icons-container">
+              {techIcons.map((tech, index) => (
                 <motion.div
                   key={index}
-                  ref={el => techIconsRef.current[index] = el}
+                  custom={index}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={techControls}
+                  className="tech-icon"
                   style={{
-                    position: 'absolute',
-                    ...positions[index],
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid rgba(249, 115, 22, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#f97316',
-                    fontSize: '1.2rem',
-                    opacity: 0,
-                    transform: 'scale(0)',
-                    transition: 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                    zIndex: 3,
+                    ...tech.pos,
+                    width: `${tech.size}px`,
+                    height: `${tech.size}px`,
                   }}
-                  animate={{
-                    y: [0, -10, 0],
-                  }}
-                  transition={{
-                    duration: 4 + index,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    delay: 1 + index * 0.2
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'scale(1.2)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(249, 115, 22, 0.5)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = 'none';
+                  whileHover={{ 
+                    scale: 1.15,
+                    boxShadow: '0 0 20px rgba(249, 115, 22, 0.6)',
+                    zIndex: 10,
                   }}
                 >
-                  {tech.icon}
-                  <motion.span
-                    style={{
-                      position: 'absolute',
-                      bottom: '-25px',
-                      fontSize: '0.7rem',
-                      color: '#fff',
-                      whiteSpace: 'nowrap',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                    }}
-                  >
+                  <div className="tech-icon-inner">
+                    {tech.icon}
+                  </div>
+                  <motion.span className="tech-tooltip">
                     {tech.name}
                   </motion.span>
                 </motion.div>
-              );
-            })}
-            
-            {/* Perfect glow effect */}
-            <div 
-              style={{
-                position: 'absolute',
-                bottom: '10%',
-                left: '10%',
-                right: '10%',
-                height: '30%',
-                background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.3) 0%, transparent 70%)',
-                filter: 'blur(20px)',
-                zIndex: 1,
-                pointerEvents: 'none',
-                borderRadius: '50%',
+              ))}
+            </motion.div>
+
+            {/* Enhanced glow effect under the image */}
+            <motion.div 
+              className="image-glow"
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: [0.3, 0.5, 0.3],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 6,
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatType: "reverse"
               }}
             />
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
       
       {/* Scroll Indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        style={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          cursor: 'pointer',
-          color: '#f97316',
-          fontSize: '2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
+        className="scroll-indicator"
       >
         <Link
           to="projects"
           smooth={true}
-          duration={700}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textDecoration: 'none',
-            color: 'inherit',
-          }}
+          duration={400}
+          className="scroll-link"
           aria-label="Scroll down"
         >
           <motion.div
             animate={{
-              y: [0, 10, 0],
+              y: [0, 8, 0],
             }}
             transition={{
               duration: 2,
@@ -519,77 +406,373 @@ const HeroSection = () => {
             <FaChevronDown />
           </motion.div>
           <motion.span
-            style={{
-              fontSize: '0.85rem',
-              marginTop: '0.8rem',
-              color: '#94a3b8',
-              fontWeight: 500,
-              letterSpacing: '1px',
-            }}
+            className="scroll-text"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.8 }}
           >
-            EXPLORE MORE
+            Explore My Work
           </motion.span>
         </Link>
       </motion.div>
       
-      {/* Animation Keyframes */}
-      <style>
-        {`
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+      <style jsx>{`
+        .hero-section {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          padding: 80px 5%;
+          background: radial-gradient(ellipse at top right, #1e293b, #0f172a);
+          box-sizing: border-box;
+          width: 100%;
+        }
+        
+        .hero-container {
+          max-width: 1200px;
+          width: 100%;
+          margin: 0 auto;
+          position: relative;
+          z-index: 10;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: center;
+          gap: 2rem;
+        }
+        
+        .hero-text {
+          flex: 1;
+          min-width: 300px;
+          max-width: 600px;
+          padding: 0 20px;
+        }
+        
+        .hero-title {
+          font-size: 3rem;
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 1.5rem;
+          line-height: 1.2;
+          font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-text {
+          background: linear-gradient(135deg, #f97316, #f59e0b);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-weight: 700;
+        }
+        
+        .blinking-cursor {
+          display: inline-block;
+          width: 8px;
+          height: 2.8rem;
+          margin-left: 4px;
+          background:#f97316;
+          vertical-align: text-bottom;
+          animation: blink 1s infinite;
+        }
+        
+        .hero-subtitle {
+          font-size: 1.3rem;
+          color: #cbd5e1;
+          max-width: 500px;
+          margin-bottom: 2.5rem;
+          line-height: 1.6;
+          font-family: 'Inter', sans-serif;
+        }
+        
+        .hero-buttons {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-bottom: 2.5rem;
+        }
+        
+        .primary-button {
+          padding: 0.9rem 1.8rem;
+          border-radius: 6px;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+          text-decoration: none;
+          font-size: 1.1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .primary-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transition: 0.5s;
+        }
+        
+        .primary-button:hover::before {
+          left: 100%;
+        }
+        
+        .hire-button {
+          padding: 0.9rem 1.8rem;
+          border-radius: 6px;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          border: 1px solid #f97316;
+          color: #f97316;
+          text-decoration: none;
+          font-size: 1.1rem;
+          background: rgba(15, 23, 42, 0.6);
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          position: relative;
+        }
+        
+        .hire-button:hover {
+          background: rgba(249, 115, 22, 0.1);
+          box-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
+        }
+        
+        .button-icon {
+          transition: all 0.3s ease;
+        }
+        
+        .primary-button:hover .button-icon {
+          transform: translateX(3px);
+        }
+        
+        .hire-button:hover .button-icon {
+          transform: rotate(10deg);
+        }
+        
+        .social-links {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+        
+        .social-icon {
+          color: #94a3b8;
+          transition: all 0.3s ease;
+          font-size: 1.3rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background-color: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .hero-image-container {
+          flex: 1;
+          min-width: 300px;
+          max-width: 380px;
+          position: relative;
+          height: 380px;
+          margin: 0 auto;
+        }
+        
+        .image-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .profile-image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          position: relative;
+          z-index: 2;
+        }
+        
+        .tech-icons-container {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+        }
+        
+        .tech-icon {
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(249, 115, 22, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 3;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          transition: all 0.3s ease;
+        }
+        
+        .tech-icon-inner {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .tech-tooltip {
+          position: absolute;
+          font-size: 0.7rem;
+          color: #fff;
+          white-space: nowrap;
+          opacity: 0;
+          transition: all 0.3s ease;
+          background: rgba(15,23,42,0.9);
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid rgba(249,115,22,0.3);
+          pointer-events: none;
+          bottom: -25px;
+        }
+        
+        .tech-icon:hover .tech-tooltip {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        
+        .image-glow {
+          position: absolute;
+          width: 140%;
+          height: 140%;
+          border-radius: 50%;
+          background: radial-gradient(circle at center, rgba(249,115,22,0.2) 0%, transparent 60%);
+          filter: blur(30px);
+          z-index: 1;
+        }
+        
+        .scroll-indicator {
+          position: absolute;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          cursor: pointer;
+          color: #f97316;
+          font-size: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .scroll-link {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-decoration: none;
+          color: inherit;
+        }
+        
+        .scroll-text {
+          font-size: 0.9rem;
+          margin-top: 0.5rem;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+        
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        
+        @media (max-width: 1024px) {
+          .hero-section {
+            padding: 80px 5%;
           }
           
-          @media (max-width: 768px) {
-            #home {
-              padding: 80px 1rem 60px;
-            }
-            
-            #home > div {
-              flex-direction: column;
-              gap: 1rem;
-            }
-            
-            #home > div > div {
-              width: 100%;
-              padding: 0;
-              max-width: 100%;
-            }
-            
-            #home h1 {
-              text-align: center;
-            }
-            
-            #home p {
-              text-align: center;
-              margin-left: auto;
-              margin-right: auto;
-            }
-            
-            #home > div > div:first-child > div {
-              justify-content: center;
-            }
-            
-            #home > div > div:last-child {
-              order: -1;
-              margin-bottom: 2rem;
-            }
+          .hero-title {
+            font-size: 2.5rem;
           }
           
-          @media (max-width: 480px) {
-            #home {
-              padding: 60px 1rem 40px;
-            }
-            
-            #home > div > div:last-child {
-              max-width: 280px;
-            }
+          .hero-subtitle {
+            font-size: 1.2rem;
           }
-        `}
-      </style>
+        }
+        
+        @media (max-width: 768px) {
+          .hero-section {
+            padding: 80px 5% 60px;
+            text-align: center;
+          }
+          
+          .hero-container {
+            flex-direction: column;
+          }
+          
+          .hero-text {
+            order: 2;
+            margin-top: 2rem;
+            max-width: 100%;
+            padding: 0;
+          }
+          
+          .hero-image-container {
+            order: 1;
+            height: 320px;
+            max-width: 320px;
+          }
+          
+          .hero-buttons {
+            justify-content: center;
+          }
+          
+          .social-links {
+            justify-content: center;
+          }
+          
+          .hero-title {
+            font-size: 2.3rem;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .hero-section {
+            padding: 60px 5% 40px;
+          }
+          
+          .hero-title {
+            font-size: 2rem;
+          }
+          
+          .hero-subtitle {
+            font-size: 1.1rem;
+          }
+          
+          .hero-image-container {
+            height: 280px;
+            max-width: 280px;
+          }
+          
+          .primary-button,
+          .hire-button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+          }
+        }
+      `}</style>
     </section>
   );
 };
