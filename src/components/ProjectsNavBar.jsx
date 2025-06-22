@@ -46,7 +46,7 @@ const SmartNavLink = ({ to, children, activeLink, setActiveLink, linkRefs, scrol
   );
 };
 
-const Navbar = () => {
+const ProjectNavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeLink, setActiveLink] = useState('home');
@@ -55,6 +55,7 @@ const Navbar = () => {
     left: 0,
     opacity: 0
   });
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const navRef = useRef(null);
   const linkRefs = useRef({});
@@ -79,8 +80,7 @@ const Navbar = () => {
         duration: 600,
         offset: -80
       }
-    },
-  
+    }
   ];
 
   const updateUnderline = (linkName) => {
@@ -119,6 +119,39 @@ const Navbar = () => {
 
   const handleMouseLeave = () => {
     updateUnderline(activeLink);
+  };
+
+  const handleDownloadCV = async () => {
+    try {
+      setIsDownloading(true);
+      
+      // 1. Define file paths
+      const cvFilename = 'himantha_cv.pdf';
+      const publicPath = process.env.PUBLIC_URL || '';
+      const cvUrl = `${publicPath}/documents/${cvFilename}`;
+
+      // 2. Create temporary link
+      const link = document.createElement('a');
+      link.href = cvUrl;
+      link.download = `Himantha_Hirushan_CV_${new Date().getFullYear()}.pdf`;
+      link.target = '_blank';
+      
+      // 3. Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // 4. Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(cvUrl);
+      }, 100);
+
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('CV download failed. Please contact me directly at your@email.com');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -240,33 +273,40 @@ const Navbar = () => {
             ))}
           </div>
           
-          <button style={{
-            background: 'rgba(249, 115, 22, 0.15)',
-            border: '1px solid rgba(249, 115, 22, 0.2)',
-            color: '#f97316',
-            padding: '0.5rem 1.2rem',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            letterSpacing: '0.3px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontFamily: "'Inter', sans-serif",
-          }}
-          onMouseEnter={e => {
-            e.target.style.background = 'rgba(249, 115, 22, 0.25)';
-            e.target.style.transform = 'translateY(-2px)';
-          }}
-          onMouseLeave={e => {
-            e.target.style.background = 'rgba(249, 115, 22, 0.15)';
-            e.target.style.transform = 'translateY(0)';
-          }}
+          <button 
+            onClick={handleDownloadCV}
+            disabled={isDownloading}
+            style={{
+              background: 'rgba(249, 115, 22, 0.15)',
+              border: '1px solid rgba(249, 115, 22, 0.2)',
+              color: '#f97316',
+              padding: '0.5rem 1.2rem',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              letterSpacing: '0.3px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontFamily: "'Inter', sans-serif",
+              opacity: isDownloading ? 0.7 : 1,
+              pointerEvents: isDownloading ? 'none' : 'auto',
+            }}
+            onMouseEnter={e => {
+              if (!isDownloading) {
+                e.target.style.background = 'rgba(249, 115, 22, 0.25)';
+                e.target.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseLeave={e => {
+              e.target.style.background = 'rgba(249, 115, 22, 0.15)';
+              e.target.style.transform = 'translateY(0)';
+            }}
           >
             <FaFileDownload style={{ fontSize: '0.9rem' }} />
-            <span>Download CV</span>
+            <span>{isDownloading ? 'Downloading...' : 'Download CV'}</span>
           </button>
         </div>
 
@@ -333,25 +373,31 @@ const Navbar = () => {
             </SmartNavLink>
           ))}
           
-          <button style={{
-            padding: '0.9rem 1.2rem',
-            background: 'rgba(249, 115, 22, 0.15)',
-            border: '1px solid rgba(249, 115, 22, 0.2)',
-            color: '#f97316',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            fontSize: '1rem',
-            fontWeight: '500',
-            marginTop: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.8rem',
-            fontFamily: "'Inter', sans-serif",
-          }}>
+          <button 
+            onClick={handleDownloadCV}
+            disabled={isDownloading}
+            style={{
+              padding: '0.9rem 1.2rem',
+              background: 'rgba(249, 115, 22, 0.15)',
+              border: '1px solid rgba(249, 115, 22, 0.2)',
+              color: '#f97316',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontSize: '1rem',
+              fontWeight: '500',
+              marginTop: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.8rem',
+              fontFamily: "'Inter', sans-serif",
+              opacity: isDownloading ? 0.7 : 1,
+              pointerEvents: isDownloading ? 'none' : 'auto',
+            }}
+          >
             <FaFileDownload style={{ fontSize: '0.9rem' }} />
-            <span>Download CV</span>
+            <span>{isDownloading ? 'Downloading...' : 'Download CV'}</span>
           </button>
         </div>
       )}
@@ -359,4 +405,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default ProjectNavBar;

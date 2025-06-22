@@ -300,8 +300,8 @@ const HeroSection = () => {
                 className="social-icon"
                 whileHover={{ 
                   color: '#f97316',
-                  backgroundColor: 'rgba(249, 115, 22, 0.15)',
-                  borderColor: 'rgba(249, 115, 22, 0.3)',
+                  backgroundColor: '#1e293b',
+                  borderColor: '#1e293b',
                   y: -5,
                   scale: 1.1,
                 }}
@@ -388,7 +388,7 @@ const HeroSection = () => {
         <Link
           to="projects"
           smooth={true}
-          duration={700}
+          duration={400}
           className="scroll-link"
           aria-label="Scroll down"
         >
@@ -471,7 +471,7 @@ const HeroSection = () => {
           width: 8px;
           height: 2.8rem;
           margin-left: 4px;
-          background: #f97316;
+          background:#f97316;
           vertical-align: text-bottom;
           animation: blink 1s infinite;
         }

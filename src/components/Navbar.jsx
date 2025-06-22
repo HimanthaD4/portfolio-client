@@ -103,7 +103,7 @@ const Navbar = () => {
       target: 'skills',
       scrollSettings: {
         duration: 600,
-        offset: -80
+        offset: -40
       }
     },
     { 
@@ -111,7 +111,7 @@ const Navbar = () => {
       target: 'process',
       scrollSettings: {
         duration: 1000,  
-        offset: 50   
+        offset: -50   
       }
     },
     { 

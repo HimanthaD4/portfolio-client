@@ -8,8 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from "framer-motion";
 import { FaExclamationCircle, FaCheck } from "react-icons/fa";
 import styled from 'styled-components';
+import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
-// Styled Components with Professional Dark Theme
 const PageContainer = styled.div`
   min-height: 100vh;
   background-color: #0f172a;
@@ -34,7 +35,6 @@ const Title = styled.h1`
   font-weight: 600;
   color: #f8fafc;
 `;
-
 
 const NotificationBox = styled(motion.div)`
   padding: 1rem;
@@ -218,8 +218,8 @@ const FileInputLabel = styled.label`
 `;
 
 const ImagePreview = styled.img`
-  width: 5rem;
-  height: 5rem;
+  width: 80px;
+  height: 60px;
   object-fit: cover;
   border-radius: 0.375rem;
   border: 1px solid #334155;
@@ -284,92 +284,68 @@ const SecondaryButton = styled(motion.button)`
   }
 `;
 
-const ProjectItem = styled(motion.div)`
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: #334155;
-  }
-
-  &:last-child {
-    border-bottom: none;
-  }
+const ProjectList = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem;
 `;
 
-const ProjectTitle = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #e2e8f0;
-  display: flex;
+const ProjectItem = styled(motion.div)`
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #1e293b;
+  border-radius: 0.5rem;
+  border: 1px solid #334155;
   align-items: center;
+`;
+
+const ProjectImage = styled.img`
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+`;
+
+const ProjectContent = styled.div`
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 `;
 
-const ProjectCategory = styled.p`
-  font-size: 0.875rem;
+const ProjectTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+`;
+
+const ProjectCategory = styled.span`
+  font-size: 0.75rem;
   color: #94a3b8;
   display: flex;
   align-items: center;
   gap: 0.25rem;
 `;
 
-const ProjectDescription = styled.p`
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: #cbd5e1;
-`;
-
-const TagList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-`;
-
-const ProjectTag = styled.span`
-  padding: 0.25rem 0.75rem;
-  background-color: #1e40af;
-  color: #e2e8f0;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-`;
-
-const ActionButtons = styled.div`
+const ProjectActions = styled.div`
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
 `;
 
 const ActionButton = styled(motion.button)`
   padding: 0.5rem;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
   border-radius: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: ${props => props.variant === 'edit' ? '#93c5fd' : '#fca5a5'};
+  
   &:hover {
     background-color: #334155;
   }
-
-  ${props => props.variant === 'edit' && `
-    color: #93c5fd;
-    &:hover {
-      color: #60a5fa;
-    }
-  `}
-
-  ${props => props.variant === 'delete' && `
-    color: #fca5a5;
-    &:hover {
-      color: #f87171;
-    }
-  `}
 `;
 
 const EmptyState = styled.div`
@@ -414,6 +390,19 @@ const CloseModalButton = styled.button`
   cursor: pointer;
 `;
 
+const CropContainer = styled.div`
+  max-width: 500px;
+  width: 100%;
+  margin: 1rem 0;
+`;
+
+const CropControls = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const AdminProjects = () => {
@@ -429,6 +418,9 @@ const AdminProjects = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [crop, setCrop] = useState({ aspect: 4/3 });
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const [imgRef, setImgRef] = useState(null);
 
   const techTags = [
     'React', 'Express', 'MongoDB', 'Node.js', 'SQL', 
@@ -458,13 +450,13 @@ const AdminProjects = () => {
   });
 
   const categoryIcons = {
-    web: <FiLayers className="text-blue-400" />,
-    ai: <FiCpu className="text-blue-400" />,
-    mobile: <FiSmartphone className="text-blue-400" />,
-    desktop: <FiMonitor className="text-blue-400" />,
-    game: <FiPackage className="text-blue-400" />,
-    embedded: <FiCode className="text-blue-400" />,
-    other: <FiDatabase className="text-blue-400" />
+    web: <FiLayers />,
+    ai: <FiCpu />,
+    mobile: <FiSmartphone />,
+    desktop: <FiMonitor />,
+    game: <FiPackage />,
+    embedded: <FiCode />,
+    other: <FiDatabase />
   };
 
   useEffect(() => {
@@ -482,8 +474,7 @@ const AdminProjects = () => {
       setProjects(response.data.data || response.data);
       setLoading(false);
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to fetch projects';
-      setError(errorMsg);
+      setError(err.response?.data?.message || 'Failed to fetch projects');
       setLoading(false);
     }
   };
@@ -501,19 +492,10 @@ const AdminProjects = () => {
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
       isValid = false;
-    } else if (formData.title.length > 100) {
-      newErrors.title = 'Title cannot exceed 100 characters';
-      isValid = false;
     }
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
-      isValid = false;
-    } else if (formData.description.length < 50) {
-      newErrors.description = 'Description should be at least 50 characters';
-      isValid = false;
-    } else if (formData.description.length > 2000) {
-      newErrors.description = 'Description cannot exceed 2000 characters';
       isValid = false;
     }
 
@@ -522,36 +504,14 @@ const AdminProjects = () => {
       isValid = false;
     }
 
-    if (formData.github && !isValidUrl(formData.github)) {
-      newErrors.github = 'Please enter a valid URL';
-      isValid = false;
-    }
-
-    if (formData.live && !isValidUrl(formData.live)) {
-      newErrors.live = 'Please enter a valid URL';
-      isValid = false;
-    }
-
     setErrors(newErrors);
     return isValid;
-  };
-
-  const isValidUrl = (url) => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleImageChange = (e) => {
@@ -564,16 +524,13 @@ const AdminProjects = () => {
     }
 
     if (!file.type.match('image.*')) {
-      setError('Only image files are allowed (JPEG, PNG, GIF)');
+      setError('Only image files are allowed');
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onload = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
-
     setFormData(prev => ({ ...prev, image: file }));
   };
 
@@ -606,12 +563,11 @@ const AdminProjects = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
 
     try {
       const projectData = new FormData();
@@ -624,35 +580,24 @@ const AdminProjects = () => {
       if (formData.github) projectData.append('github', formData.github);
       if (formData.live) projectData.append('live', formData.live);
 
-      let response;
-      if (isEditing && currentProject) {
-        response = await axios.put(`${API_URL}/api/projects/${currentProject._id}`, projectData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true
-        });
-        setSuccess('Project updated successfully');
-      } else {
-        response = await axios.post(`${API_URL}/api/projects`, projectData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true
-        });
-        setSuccess('Project created successfully');
-      }
-      
+      const url = isEditing && currentProject 
+        ? `${API_URL}/api/projects/${currentProject._id}`
+        : `${API_URL}/api/projects`;
+
+      const method = isEditing && currentProject ? 'put' : 'post';
+
+      const response = await axios[method](url, projectData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        withCredentials: true
+      });
+
+      setSuccess(isEditing ? 'Project updated' : 'Project created');
       resetForm();
       fetchProjects();
     } catch (err) {
-      let errorMsg = 'Operation failed. Please try again.';
-      if (err.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err.message.includes('Network Error')) {
-        errorMsg = 'Network error - please check your connection';
-      }
-      setError(errorMsg);
+      setError(err.response?.data?.message || 'Operation failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -672,21 +617,19 @@ const AdminProjects = () => {
       live: project.live || ''
     });
     
-    if (project.image && project.image.data) {
+    if (project.image?.data) {
       setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
-    
+    if (!window.confirm('Are you sure?')) return;
     try {
       await axios.delete(`${API_URL}/api/projects/${id}`, { withCredentials: true });
-      setSuccess('Project deleted successfully');
+      setSuccess('Project deleted');
       fetchProjects();
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Delete failed. Please try again.';
-      setError(errorMsg);
+      setError(err.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -721,12 +664,7 @@ const AdminProjects = () => {
     return (
       <PageContainer>
         <Container>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '50vh' 
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
             <FaSpinner className="animate-spin" size={32} color="#60a5fa" />
           </div>
         </Container>
@@ -737,60 +675,43 @@ const AdminProjects = () => {
   return (
     <PageContainer>
       <Container>
-       
-        <div className="mb-6">
-          <AnimatePresence>
-            {error && (
-              <ErrorBox
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FaExclamationCircle />
-                  <span>{error}</span>
-                </div>
-                <button 
-                  onClick={() => setError(null)} 
-                  style={{ background: 'none', border: 'none', color: 'inherit' }}
-                >
-                  <FaTimes />
-                </button>
-              </ErrorBox>
-            )}
+        <AnimatePresence>
+          {error && (
+            <ErrorBox
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaExclamationCircle />
+                <span>{error}</span>
+              </div>
+              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: 'inherit' }}>
+                <FaTimes />
+              </button>
+            </ErrorBox>
+          )}
 
-            {success && (
-              <SuccessBox
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FaCheck />
-                  <span>{success}</span>
-                </div>
-                <button 
-                  onClick={() => setSuccess(null)} 
-                  style={{ background: 'none', border: 'none', color: 'inherit' }}
-                >
-                  <FaTimes />
-                </button>
-              </SuccessBox>
-            )}
-          </AnimatePresence>
-        </div>
+          {success && (
+            <SuccessBox
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaCheck />
+                <span>{success}</span>
+              </div>
+              <button onClick={() => setSuccess(null)} style={{ background: 'none', border: 'none', color: 'inherit' }}>
+                <FaTimes />
+              </button>
+            </SuccessBox>
+          )}
+        </AnimatePresence>
 
-        <Card
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <Card>
           <CardHeader>
-            <CardTitle>
-              {isEditing ? 'Edit Project' : 'Add New Project'}
-            </CardTitle>
+            <CardTitle>{isEditing ? 'Edit Project' : 'Add Project'}</CardTitle>
           </CardHeader>
           
           <FormContainer>
@@ -815,12 +736,12 @@ const AdminProjects = () => {
                     value={formData.category}
                     onChange={handleInputChange}
                   >
-                    <option value="web">Web Development</option>
-                    <option value="ai">AI/ML Project</option>
-                    <option value="mobile">Mobile App</option>
-                    <option value="desktop">Desktop App</option>
-                    <option value="game">Game Development</option>
-                    <option value="embedded">Embedded Systems</option>
+                    <option value="web">Web</option>
+                    <option value="ai">AI/ML</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="desktop">Desktop</option>
+                    <option value="game">Game</option>
+                    <option value="embedded">Embedded</option>
                     <option value="other">Other</option>
                   </Select>
                 </FormGroup>
@@ -835,9 +756,6 @@ const AdminProjects = () => {
                   hasError={!!errors.description}
                 />
                 {errors.description && <ErrorText>{errors.description}</ErrorText>}
-                <p className="text-sm text-blue-400">
-                  {formData.description.length}/2000 characters
-                </p>
               </FormGroup>
 
               <FormGroup>
@@ -846,20 +764,17 @@ const AdminProjects = () => {
                   {formData.tags.map(tag => (
                     <Tag key={tag}>
                       {tag}
-                      <RemoveTagButton
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                      >
+                      <RemoveTagButton onClick={() => removeTag(tag)}>
                         <FaTimes size={10} />
                       </RemoveTagButton>
                     </Tag>
                   ))}
                   <select
                     onChange={(e) => handleTagSelect(e.target.value)}
-                    className="border-none outline-none bg-transparent text-blue-400"
+                    style={{ border: 'none', outline: 'none', background: 'transparent', color: '#60a5fa' }}
                     value=""
                   >
-                    <option value="">Select a tag...</option>
+                    <option value="">Add tag...</option>
                     {techTags.map(tag => (
                       <option key={tag} value={tag}>{tag}</option>
                     ))}
@@ -869,44 +784,40 @@ const AdminProjects = () => {
               </FormGroup>
 
               <FormGroup>
-                <Label>Featured Project</Label>
+                <Label>Featured</Label>
                 <div 
-                  className="flex items-center gap-2 cursor-pointer text-blue-400"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
                   onClick={toggleFeatured}
                 >
                   {formData.featured ? (
-                    <FaStar className="text-yellow-400" size={20} />
+                    <FaStar color="#fbbf24" />
                   ) : (
-                    <FaRegStar size={20} />
+                    <FaRegStar />
                   )}
                   <span>{formData.featured ? 'Featured' : 'Not Featured'}</span>
                 </div>
               </FormGroup>
 
               <FormGroup>
-                <Label>Project Image</Label>
-                <div className="flex items-center gap-4">
+                <Label>Image</Label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <FileInputLabel>
-                    Choose File
+                    Choose Image
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="hidden"
+                      style={{ display: 'none' }}
                     />
                   </FileInputLabel>
                   {imagePreview && (
-                    <div className="relative inline-block">
+                    <div style={{ position: 'relative' }}>
                       <ImagePreview 
                         src={imagePreview} 
-                        alt="Preview" 
+                        alt="Preview"
                         onClick={() => setShowImageModal(true)}
                       />
-                      <RemoveImageButton
-                        type="button"
-                        onClick={removeImage}
-                        aria-label="Remove image"
-                      >
+                      <RemoveImageButton onClick={removeImage}>
                         <FaTimes size={10} />
                       </RemoveImageButton>
                     </div>
@@ -922,14 +833,14 @@ const AdminProjects = () => {
                     name="github"
                     value={formData.github}
                     onChange={handleInputChange}
-                    placeholder="https://github.com/username/repo"
+                    placeholder="https://github.com/user/repo"
                     hasError={!!errors.github}
                   />
                   {errors.github && <ErrorText>{errors.github}</ErrorText>}
                 </FormGroup>
                 
                 <FormGroup>
-                  <Label>Live Demo URL</Label>
+                  <Label>Live URL</Label>
                   <Input
                     type="url"
                     name="live"
@@ -945,7 +856,7 @@ const AdminProjects = () => {
               <ButtonGroup>
                 <PrimaryButton
                   type="submit"
-                  whileHover={isSubmitting ? {} : { scale: 1.02 }}
+                  whileHover={{ scale: 1.02 }}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -956,7 +867,7 @@ const AdminProjects = () => {
                   ) : (
                     <>
                       <FaPlus />
-                      {isEditing ? 'Update Project' : 'Create Project'}
+                      {isEditing ? 'Update' : 'Create'}
                     </>
                   )}
                 </PrimaryButton>
@@ -975,21 +886,17 @@ const AdminProjects = () => {
           </FormContainer>
         </Card>
 
-        <Card 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
+        <Card>
           <CardHeader>
             <CardTitle>
               {showFeaturedOnly ? 'Featured Projects' : 'All Projects'} ({filteredProjects.length})
             </CardTitle>
             <div 
-              className="flex items-center gap-2 cursor-pointer text-blue-200 hover:text-white"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
               onClick={toggleShowFeaturedOnly}
             >
               {showFeaturedOnly ? (
-                <FaStar className="text-yellow-300" />
+                <FaStar color="#fbbf24" />
               ) : (
                 <FaRegStar />
               )}
@@ -999,91 +906,37 @@ const AdminProjects = () => {
           
           {filteredProjects.length === 0 ? (
             <EmptyState>
-              {showFeaturedOnly 
-                ? 'No featured projects found.' 
-                : 'No projects found. Create your first project above.'}
+              {showFeaturedOnly ? 'No featured projects' : 'No projects found'}
             </EmptyState>
           ) : (
-            <div>
+            <ProjectList>
               {filteredProjects.map((project) => (
-                <ProjectItem
-                  key={project._id}
-                  whileHover={{ backgroundColor: '#334155' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {project.image && project.image.data ? (
-                      <img
-                        src={`data:${project.image.contentType};base64,${project.image.data}`}
-                        alt={project.title}
-                        className="w-20 h-20 object-cover rounded-lg border border-blue-200 cursor-pointer"
-                        onClick={() => {
-                          setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
-                          setShowImageModal(true);
-                        }}
-                      />
-                    ) : (
-                      <div className="w-20 h-20 bg-blue-900 rounded-lg border border-blue-800 flex items-center justify-center text-blue-400">
-                        No Image
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                        <div>
-                          <ProjectTitle>
-                            {project.featured && <FaStar className="text-yellow-400" />}
-                            {project.title}
-                          </ProjectTitle>
-                          <ProjectCategory>
-                            {categoryIcons[project.category]}
-                            {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
-                          </ProjectCategory>
-                        </div>
-                        <div className="flex gap-3">
-                          {project.github && (
-                            <a 
-                              href={project.github} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 transition-colors"
-                              title="GitHub Repository"
-                            >
-                              <FaExternalLinkAlt />
-                            </a>
-                          )}
-                          {project.live && (
-                            <a 
-                              href={project.live} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 transition-colors"
-                              title="Live Demo"
-                            >
-                              <FaExternalLinkAlt />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <ProjectDescription>
-                        {project.description}
-                      </ProjectDescription>
-                      <TagList>
-                        {project.tags.map((tag, index) => (
-                          <ProjectTag key={index}>
-                            {tag}
-                          </ProjectTag>
-                        ))}
-                      </TagList>
+                <ProjectItem key={project._id}>
+                  {project.image?.data ? (
+                    <ProjectImage
+                      src={`data:${project.image.contentType};base64,${project.image.data}`}
+                      alt={project.title}
+                    />
+                  ) : (
+                    <div style={{ width: '80px', height: '60px', backgroundColor: '#334155', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FiLayers color="#64748b" />
                     </div>
-                  </div>
-                  <ActionButtons>
+                  )}
+                  <ProjectContent>
+                    <ProjectTitle>
+                      {project.featured && <FaStar color="#fbbf24" size={14} style={{ marginRight: '0.25rem' }} />}
+                      {project.title}
+                    </ProjectTitle>
+                    <ProjectCategory>
+                      {categoryIcons[project.category]}
+                      {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
+                    </ProjectCategory>
+                  </ProjectContent>
+                  <ProjectActions>
                     <ActionButton
                       onClick={() => handleEdit(project)}
                       variant="edit"
                       whileHover={{ scale: 1.1 }}
-                      aria-label="Edit project"
                     >
                       <FaEdit />
                     </ActionButton>
@@ -1091,34 +944,26 @@ const AdminProjects = () => {
                       onClick={() => handleDelete(project._id)}
                       variant="delete"
                       whileHover={{ scale: 1.1 }}
-                      aria-label="Delete project"
                     >
                       <FaTrash />
                     </ActionButton>
-                  </ActionButtons>
+                  </ProjectActions>
                 </ProjectItem>
               ))}
-            </div>
+            </ProjectList>
           )}
         </Card>
 
         {showImageModal && (
-          <ModalOverlay 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={() => setShowImageModal(false)}
-          >
+          <ModalOverlay onClick={() => setShowImageModal(false)}>
             <ModalContent>
               <img 
                 src={imagePreview} 
                 alt="Full Preview" 
-                className="max-w-full max-h-[80vh] object-contain"
+                style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }}
                 onClick={(e) => e.stopPropagation()}
               />
-              <CloseModalButton
-                onClick={() => setShowImageModal(false)}
-                aria-label="Close preview"
-              >
+              <CloseModalButton onClick={() => setShowImageModal(false)}>
                 <FaTimes />
               </CloseModalButton>
             </ModalContent>
