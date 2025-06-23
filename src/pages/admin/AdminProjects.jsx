@@ -1,16 +1,24 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { FaEdit, FaTrash, FaPlus, FaSpinner, FaArrowLeft, FaTimes, FaExternalLinkAlt, FaStar, FaRegStar } from 'react-icons/fa';
-import { FiLayers, FiCode, FiDatabase, FiCpu, FiSmartphone, FiMonitor, FiPackage } from 'react-icons/fi';
+import { 
+  FaEdit, FaTrash, FaPlus, FaSpinner, FaTimes, 
+  FaExternalLinkAlt, FaStar, FaRegStar, FaSearch,
+  FaExclamationCircle, FaCheck 
+} from 'react-icons/fa';
+import { 
+  FiLayers, FiCode, FiDatabase, FiCpu, 
+  FiSmartphone, FiMonitor, FiPackage 
+} from 'react-icons/fi';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from "framer-motion";
-import { FaExclamationCircle, FaCheck } from "react-icons/fa";
 import styled from 'styled-components';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import debounce from 'lodash.debounce';
 
+// ========== Styled Components ==========
 const PageContainer = styled.div`
   min-height: 100vh;
   background-color: #0f172a;
@@ -300,6 +308,13 @@ const ProjectItem = styled(motion.div)`
   border-radius: 0.5rem;
   border: 1px solid #334155;
   align-items: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #1e293b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
 `;
 
 const ProjectImage = styled.img`
@@ -403,12 +418,35 @@ const CropControls = styled.div`
   margin-top: 1rem;
 `;
 
+const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  background-color: #1e293b;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  padding: 0.5rem;
+  outline: none;
+
+  &::placeholder {
+    color: #64748b;
+  }
+`;
+
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const AdminProjects = () => {
   const { isAuthenticated, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -418,9 +456,11 @@ const AdminProjects = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [crop, setCrop] = useState({ aspect: 4/3 });
   const [completedCrop, setCompletedCrop] = useState(null);
-  const [imgRef, setImgRef] = useState(null);
+  const imgRef = useRef(null);
+  const previewCanvasRef = useRef(null);
 
   const techTags = [
     'React', 'Express', 'MongoDB', 'Node.js', 'SQL', 
@@ -459,6 +499,7 @@ const AdminProjects = () => {
     other: <FiDatabase />
   };
 
+  // Check authentication and fetch projects on mount
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) {
       navigate('/login');
@@ -467,6 +508,31 @@ const AdminProjects = () => {
     fetchProjects();
   }, [isAuthenticated, isAdmin, navigate]);
 
+  // Filter projects based on search term and featured filter
+  useEffect(() => {
+    const filtered = projects.filter(project => {
+      const matchesSearch = searchTerm === '' || 
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.tags && project.tags.some(tag => 
+          tag.toLowerCase().includes(searchTerm.toLowerCase())));
+      
+      const matchesFeatured = !showFeaturedOnly || project.featured;
+      
+      return matchesSearch && matchesFeatured;
+    });
+    setFilteredProjects(filtered);
+  }, [projects, searchTerm, showFeaturedOnly]);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((term) => {
+      setSearchTerm(term);
+    }, 300),
+    []
+  );
+
+  // Fetch projects from API
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -479,6 +545,7 @@ const AdminProjects = () => {
     }
   };
 
+  // Form validation
   const validateForm = () => {
     let isValid = true;
     const newErrors = {
@@ -492,10 +559,16 @@ const AdminProjects = () => {
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
       isValid = false;
+    } else if (formData.title.length > 100) {
+      newErrors.title = 'Title must be less than 100 characters';
+      isValid = false;
     }
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+      isValid = false;
+    } else if (formData.description.length > 2000) {
+      newErrors.description = 'Description must be less than 2000 characters';
       isValid = false;
     }
 
@@ -504,16 +577,38 @@ const AdminProjects = () => {
       isValid = false;
     }
 
+    if (formData.github && !isValidUrl(formData.github)) {
+      newErrors.github = 'Please enter a valid URL';
+      isValid = false;
+    }
+
+    if (formData.live && !isValidUrl(formData.live)) {
+      newErrors.live = 'Please enter a valid URL';
+      isValid = false;
+    }
+
     setErrors(newErrors);
     return isValid;
   };
 
+  // URL validation helper
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
+  // Handle image selection and preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -534,19 +629,23 @@ const AdminProjects = () => {
     setFormData(prev => ({ ...prev, image: file }));
   };
 
+  // Remove selected image
   const removeImage = () => {
     setImagePreview('');
     setFormData(prev => ({ ...prev, image: null }));
   };
 
+  // Toggle featured status
   const toggleFeatured = () => {
     setFormData(prev => ({ ...prev, featured: !prev.featured }));
   };
 
+  // Toggle featured filter
   const toggleShowFeaturedOnly = () => {
     setShowFeaturedOnly(prev => !prev);
   };
 
+  // Add tag to project
   const handleTagSelect = (tag) => {
     if (!formData.tags.includes(tag)) {
       setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
@@ -554,6 +653,7 @@ const AdminProjects = () => {
     setErrors(prev => ({ ...prev, tags: '' }));
   };
 
+  // Remove tag from project
   const removeTag = (tagToRemove) => {
     setFormData(prev => ({
       ...prev,
@@ -561,6 +661,7 @@ const AdminProjects = () => {
     }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -593,16 +694,17 @@ const AdminProjects = () => {
         withCredentials: true
       });
 
-      setSuccess(isEditing ? 'Project updated' : 'Project created');
+      setSuccess(isEditing ? 'Project updated successfully' : 'Project created successfully');
       resetForm();
       fetchProjects();
     } catch (err) {
-      setError(err.response?.data?.message || 'Operation failed');
+      setError(err.response?.data?.message || 'Operation failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Edit project
   const handleEdit = (project) => {
     setIsEditing(true);
     setCurrentProject(project);
@@ -622,17 +724,19 @@ const AdminProjects = () => {
     }
   };
 
+  // Delete project
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure?')) return;
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
     try {
       await axios.delete(`${API_URL}/api/projects/${id}`, { withCredentials: true });
-      setSuccess('Project deleted');
+      setSuccess('Project deleted successfully');
       fetchProjects();
     } catch (err) {
-      setError(err.response?.data?.message || 'Delete failed');
+      setError(err.response?.data?.message || 'Delete failed. Please try again.');
     }
   };
 
+  // Reset form to initial state
   const resetForm = () => {
     setIsEditing(false);
     setCurrentProject(null);
@@ -656,10 +760,7 @@ const AdminProjects = () => {
     });
   };
 
-  const filteredProjects = showFeaturedOnly 
-    ? projects.filter(project => project.featured)
-    : projects;
-
+  // Loading state
   if (loading) {
     return (
       <PageContainer>
@@ -675,18 +776,24 @@ const AdminProjects = () => {
   return (
     <PageContainer>
       <Container>
+        {/* Notification messages */}
         <AnimatePresence>
           {error && (
             <ErrorBox
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: 100 }}
+              key="error"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaExclamationCircle />
                 <span>{error}</span>
               </div>
-              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: 'inherit' }}>
+              <button 
+                onClick={() => setError(null)} 
+                style={{ background: 'none', border: 'none', color: 'inherit' }}
+                aria-label="Close error message"
+              >
                 <FaTimes />
               </button>
             </ErrorBox>
@@ -697,41 +804,50 @@ const AdminProjects = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: 100 }}
+              key="success"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaCheck />
                 <span>{success}</span>
               </div>
-              <button onClick={() => setSuccess(null)} style={{ background: 'none', border: 'none', color: 'inherit' }}>
+              <button 
+                onClick={() => setSuccess(null)} 
+                style={{ background: 'none', border: 'none', color: 'inherit' }}
+                aria-label="Close success message"
+              >
                 <FaTimes />
               </button>
             </SuccessBox>
           )}
         </AnimatePresence>
 
+        {/* Project Form */}
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Project' : 'Add Project'}</CardTitle>
+            <CardTitle>{isEditing ? 'Edit Project' : 'Add New Project'}</CardTitle>
           </CardHeader>
           
           <FormContainer>
             <form onSubmit={handleSubmit}>
               <FormGrid>
                 <FormGroup>
-                  <Label>Title*</Label>
+                  <Label htmlFor="title">Title*</Label>
                   <Input
                     type="text"
+                    id="title"
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
                     hasError={!!errors.title}
+                    maxLength="100"
                   />
                   {errors.title && <ErrorText>{errors.title}</ErrorText>}
                 </FormGroup>
                 
                 <FormGroup>
-                  <Label>Category*</Label>
+                  <Label htmlFor="category">Category*</Label>
                   <Select
+                    id="category"
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
@@ -748,23 +864,28 @@ const AdminProjects = () => {
               </FormGrid>
 
               <FormGroup>
-                <Label>Description*</Label>
+                <Label htmlFor="description">Description*</Label>
                 <TextArea
+                  id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   hasError={!!errors.description}
+                  maxLength="2000"
                 />
                 {errors.description && <ErrorText>{errors.description}</ErrorText>}
               </FormGroup>
 
               <FormGroup>
-                <Label>Tags*</Label>
+                <Label htmlFor="tags">Tags*</Label>
                 <TagContainer>
                   {formData.tags.map(tag => (
                     <Tag key={tag}>
                       {tag}
-                      <RemoveTagButton onClick={() => removeTag(tag)}>
+                      <RemoveTagButton 
+                        onClick={() => removeTag(tag)}
+                        aria-label={`Remove ${tag} tag`}
+                      >
                         <FaTimes size={10} />
                       </RemoveTagButton>
                     </Tag>
@@ -773,6 +894,7 @@ const AdminProjects = () => {
                     onChange={(e) => handleTagSelect(e.target.value)}
                     style={{ border: 'none', outline: 'none', background: 'transparent', color: '#60a5fa' }}
                     value=""
+                    aria-label="Add tag"
                   >
                     <option value="">Add tag...</option>
                     {techTags.map(tag => (
@@ -788,6 +910,9 @@ const AdminProjects = () => {
                 <div 
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
                   onClick={toggleFeatured}
+                  role="button"
+                  tabIndex="0"
+                  aria-label={formData.featured ? 'Mark as not featured' : 'Mark as featured'}
                 >
                   {formData.featured ? (
                     <FaStar color="#fbbf24" />
@@ -808,6 +933,7 @@ const AdminProjects = () => {
                       accept="image/*"
                       onChange={handleImageChange}
                       style={{ display: 'none' }}
+                      aria-label="Choose project image"
                     />
                   </FileInputLabel>
                   {imagePreview && (
@@ -817,7 +943,10 @@ const AdminProjects = () => {
                         alt="Preview"
                         onClick={() => setShowImageModal(true)}
                       />
-                      <RemoveImageButton onClick={removeImage}>
+                      <RemoveImageButton 
+                        onClick={removeImage}
+                        aria-label="Remove image"
+                      >
                         <FaTimes size={10} />
                       </RemoveImageButton>
                     </div>
@@ -827,9 +956,10 @@ const AdminProjects = () => {
 
               <FormGrid>
                 <FormGroup>
-                  <Label>GitHub URL</Label>
+                  <Label htmlFor="github">GitHub URL</Label>
                   <Input
                     type="url"
+                    id="github"
                     name="github"
                     value={formData.github}
                     onChange={handleInputChange}
@@ -840,9 +970,10 @@ const AdminProjects = () => {
                 </FormGroup>
                 
                 <FormGroup>
-                  <Label>Live URL</Label>
+                  <Label htmlFor="live">Live URL</Label>
                   <Input
                     type="url"
+                    id="live"
                     name="live"
                     value={formData.live}
                     onChange={handleInputChange}
@@ -858,6 +989,7 @@ const AdminProjects = () => {
                   type="submit"
                   whileHover={{ scale: 1.02 }}
                   disabled={isSubmitting}
+                  aria-label={isEditing ? 'Update project' : 'Create project'}
                 >
                   {isSubmitting ? (
                     <>
@@ -867,7 +999,7 @@ const AdminProjects = () => {
                   ) : (
                     <>
                       <FaPlus />
-                      {isEditing ? 'Update' : 'Create'}
+                      {isEditing ? 'Update Project' : 'Create Project'}
                     </>
                   )}
                 </PrimaryButton>
@@ -877,6 +1009,7 @@ const AdminProjects = () => {
                     type="button"
                     whileHover={{ scale: 1.02 }}
                     onClick={resetForm}
+                    aria-label="Cancel editing"
                   >
                     Cancel
                   </SecondaryButton>
@@ -886,40 +1019,68 @@ const AdminProjects = () => {
           </FormContainer>
         </Card>
 
+        {/* Projects List */}
         <Card>
           <CardHeader>
             <CardTitle>
               {showFeaturedOnly ? 'Featured Projects' : 'All Projects'} ({filteredProjects.length})
             </CardTitle>
-            <div 
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-              onClick={toggleShowFeaturedOnly}
-            >
-              {showFeaturedOnly ? (
-                <FaStar color="#fbbf24" />
-              ) : (
-                <FaRegStar />
-              )}
-              <span>{showFeaturedOnly ? 'Show All' : 'Show Featured'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <SearchContainer>
+                <FaSearch color="#64748b" />
+                <SearchInput
+                  type="text"
+                  placeholder="Search projects..."
+                  onChange={(e) => debouncedSearch(e.target.value)}
+                  aria-label="Search projects"
+                />
+              </SearchContainer>
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                onClick={toggleShowFeaturedOnly}
+                role="button"
+                tabIndex="0"
+                aria-label={showFeaturedOnly ? 'Show all projects' : 'Show featured projects only'}
+              >
+                {showFeaturedOnly ? (
+                  <FaStar color="#fbbf24" />
+                ) : (
+                  <FaRegStar />
+                )}
+                <span>{showFeaturedOnly ? 'Show All' : 'Show Featured'}</span>
+              </div>
             </div>
           </CardHeader>
           
           {filteredProjects.length === 0 ? (
             <EmptyState>
-              {showFeaturedOnly ? 'No featured projects' : 'No projects found'}
+              {showFeaturedOnly ? 'No featured projects found' : 'No projects found'}
             </EmptyState>
           ) : (
             <ProjectList>
               {filteredProjects.map((project) => (
-                <ProjectItem key={project._id}>
+                <ProjectItem 
+                  key={project._id}
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
                   {project.image?.data ? (
                     <ProjectImage
                       src={`data:${project.image.contentType};base64,${project.image.data}`}
                       alt={project.title}
+                      loading="lazy"
                     />
                   ) : (
-                    <div style={{ width: '80px', height: '60px', backgroundColor: '#334155', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FiLayers color="#64748b" />
+                    <div style={{ 
+                      width: '80px', 
+                      height: '60px', 
+                      backgroundColor: '#334155', 
+                      borderRadius: '0.375rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center' 
+                    }}>
+                      {categoryIcons[project.category] || <FiLayers color="#64748b" />}
                     </div>
                   )}
                   <ProjectContent>
@@ -931,12 +1092,26 @@ const AdminProjects = () => {
                       {categoryIcons[project.category]}
                       {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
                     </ProjectCategory>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {project.tags?.slice(0, 3).map(tag => (
+                        <span key={tag} style={{ 
+                          fontSize: '0.7rem', 
+                          backgroundColor: '#1e293b', 
+                          padding: '0.25rem 0.5rem', 
+                          borderRadius: '999px',
+                          color: '#94a3b8'
+                        }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </ProjectContent>
                   <ProjectActions>
                     <ActionButton
                       onClick={() => handleEdit(project)}
                       variant="edit"
                       whileHover={{ scale: 1.1 }}
+                      aria-label={`Edit ${project.title}`}
                     >
                       <FaEdit />
                     </ActionButton>
@@ -944,6 +1119,7 @@ const AdminProjects = () => {
                       onClick={() => handleDelete(project._id)}
                       variant="delete"
                       whileHover={{ scale: 1.1 }}
+                      aria-label={`Delete ${project.title}`}
                     >
                       <FaTrash />
                     </ActionButton>
@@ -954,16 +1130,29 @@ const AdminProjects = () => {
           )}
         </Card>
 
+        {/* Image Preview Modal */}
         {showImageModal && (
-          <ModalOverlay onClick={() => setShowImageModal(false)}>
-            <ModalContent>
+          <ModalOverlay 
+            onClick={() => setShowImageModal(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ModalContent onClick={(e) => e.stopPropagation()}>
               <img 
                 src={imagePreview} 
                 alt="Full Preview" 
-                style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }}
-                onClick={(e) => e.stopPropagation()}
+                style={{ 
+                  maxWidth: '90vw', 
+                  maxHeight: '90vh', 
+                  objectFit: 'contain',
+                  borderRadius: '0.5rem'
+                }}
               />
-              <CloseModalButton onClick={() => setShowImageModal(false)}>
+              <CloseModalButton 
+                onClick={() => setShowImageModal(false)}
+                aria-label="Close image preview"
+              >
                 <FaTimes />
               </CloseModalButton>
             </ModalContent>
