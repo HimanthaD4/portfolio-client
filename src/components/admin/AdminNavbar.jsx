@@ -104,25 +104,25 @@ const AdminNavbar = () => {
             Projects
           </Link>
           <Link 
-            to="/admin/users" 
+            to="/admin/contacts" 
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              color: isActive('/admin/users') ? 'white' : '#9CA3AF',
+              color: isActive('/admin/contacts') ? 'white' : '#9CA3AF',
               textDecoration: 'none',
               fontSize: '14px',
               fontWeight: '500',
               padding: '8px 12px',
               borderRadius: '6px',
               transition: 'all 0.2s ease',
-              backgroundColor: isActive('/admin/users') ? 'rgba(249, 115, 22, 0.1)' : 'transparent'
+              backgroundColor: isActive('/admin/contacts') ? 'rgba(249, 115, 22, 0.1)' : 'transparent'
             }}
           >
             <FiUsers size={16} />
-            Users
+            Messages
           </Link>
-          <Link 
+          {/* <Link 
             to="/admin/analytics" 
             style={{
               display: 'flex',
@@ -140,7 +140,7 @@ const AdminNavbar = () => {
           >
             <FiBarChart2 size={16} />
             Analytics
-          </Link>
+          </Link> */}
 
           <button 
             style={{
