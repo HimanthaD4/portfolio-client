@@ -123,7 +123,7 @@ const AdminNavbar = () => {
             Users
           </Link>
           <Link 
-            to="/admin/contacts" 
+            to="/admin/analytics" 
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -135,11 +135,11 @@ const AdminNavbar = () => {
               padding: '8px 12px',
               borderRadius: '6px',
               transition: 'all 0.2s ease',
-              backgroundColor: isActive('/admin/contacts') ? 'rgba(249, 115, 22, 0.1)' : 'transparent'
+              backgroundColor: isActive('/admin/analytics') ? 'rgba(249, 115, 22, 0.1)' : 'transparent'
             }}
           >
             <FiBarChart2 size={16} />
-            contact
+            Analytics
           </Link>
 
           <button 
