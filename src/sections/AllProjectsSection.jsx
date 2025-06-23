@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FaGithub, FaGlobe, FaLayerGroup, FaCode, FaRobot, FaMobileAlt, FaSearch, FaTimes } from 'react-icons/fa';
+import { FaGithub, FaGlobe, FaCode, FaRobot, FaMobileAlt, FaSearch, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
@@ -12,180 +11,124 @@ const AllProjectsSection = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // Fetch projects with memoization
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchProjects = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/projects`);
-        const projectsData = Array.isArray(response.data.data) ? response.data.data : 
-                           Array.isArray(response.data) ? response.data : [];
+        const response = await axios.get(`${API_URL}/api/projects`, {
+          signal: controller.signal
+        });
+        const projectsData = Array.isArray(response.data?.data) ? response.data.data : [];
         setProjects(projectsData);
         setLoading(false);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch projects');
-        setLoading(false);
+        if (err.name !== 'CanceledError') {
+          setError(err.response?.data?.message || err.message || 'Failed to fetch projects');
+          setLoading(false);
+        }
       }
     };
 
     fetchProjects();
+
+    return () => controller.abort();
   }, []);
 
+  // Scroll event listener for back-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Optimized image handling
   const handleImageError = (e) => {
-    e.target.src = 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
+    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzBmMTcyYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZTJlOGYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiPlByb2plY3QgUHJldmlldzwvdGV4dD48L3N2Zz4=';
+    e.target.onerror = null;
   };
 
-  const getImageSource = (project) => {
-    if (!project.image) return 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
-    if (project.image.url) return project.image.url;
-    if (project.image.data) return `data:${project.image.contentType};base64,${project.image.data}`;
-    return 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
-  };
-
-  const getCategoryIcon = (category) => {
-    switch(category) {
-      case 'web': return <FaCode />;
-      case 'ai': return <FaRobot />;
-      case 'mobile': return <FaMobileAlt />;
-      default: return <FaCode />;
+  const getOptimizedImageUrl = (project) => {
+    if (!project?.image) return null;
+    
+    // Prefer URL from backend
+    if (project.image.url) {
+      return project.image.url.startsWith('http') 
+        ? project.image.url 
+        : `${API_URL}${project.image.url}`;
     }
+    
+    // Fallback to base64 if available
+    if (project.image.data) {
+      return `data:${project.image.contentType || 'image/jpeg'};base64,${project.image.data}`;
+    }
+    
+    return null;
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
-    
-    const matchesCategory = activeCategory === 'all' || project.category === activeCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Memoized filtered projects
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = searchTerm === '' || 
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.tags && project.tags.some(tag => 
+          tag.toLowerCase().includes(searchTerm.toLowerCase())));
+      
+      const matchesCategory = activeCategory === 'all' || project.category === activeCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [projects, searchTerm, activeCategory]);
 
-  const categories = [
+  // Categories data
+  const categories = useMemo(() => [
     { id: 'all', name: 'All Projects' },
-    { id: 'web', name: 'Web Development' },
+    { id: 'web', name: 'Web' },
     { id: 'ai', name: 'AI/ML' },
-    { id: 'mobile', name: 'Mobile Apps' }
-  ];
+    { id: 'mobile', name: 'Mobile' },
+    { id: 'desktop', name: 'Desktop' },
+    { id: 'game', name: 'Games' }
+  ], []);
 
-  if (loading) return (
-    <div style={{ 
-      padding: '6rem 1rem', 
-      textAlign: 'center', 
-      backgroundColor: '#0f172a', 
-      minHeight: '100vh', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center' 
-    }}>
-      <div style={{ color: '#e2e8f0', fontSize: '1.1rem' }}>Loading projects...</div>
-    </div>
-  );
-
-  if (error) return (
-    <div style={{ 
-      padding: '6rem 1rem', 
-      textAlign: 'center', 
-      backgroundColor: '#0f172a', 
-      minHeight: '100vh', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center' 
-    }}>
-      <div style={{ color: '#f87171', fontSize: '1.1rem' }}>Error: {error}</div>
-    </div>
-  );
+  // Loading and error states
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
 
   return (
-    <section id="all-projects" style={{ 
-      backgroundColor: '#0f172a', 
-      padding: '4rem 1rem', 
-      minHeight: '100vh',
-      position: 'relative', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center' 
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        width: '100%', 
-        margin: '0 auto', 
-        position: 'relative', 
-        zIndex: 2, 
-        padding: '0 1rem' 
-      }}>
+    <section className="projects-container">
+      <div className="projects-content">
         {/* Header Section */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          textAlign: 'center', 
-          marginBottom: '-1rem' 
-        }}>
-          <h2 style={{ 
-            fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', 
-            fontWeight: '700', 
-            marginBottom: '0.5rem', 
-            color: '#f59e0b' 
-          }}>
-            My <span style={{ color: '#94a3b8' }}>Portfolio</span>
+        <div className="projects-header">
+          <h2>
+            <span className="gradient-text">My</span>{' '}
+            <span className="normal-text">Portfolio</span>
           </h2>
-          <p style={{ 
-            maxWidth: '700px', 
-            marginBottom: '1.5rem', 
-            fontSize: '1rem', 
-            color: '#7c8a9e', 
-            lineHeight: 1.5 
-          }}>
+          <p className="subtitle">
             Browse through all my completed projects and works
           </p>
           
           {/* Search and Filter Bar */}
-          <div style={{ 
-            width: '100%', 
-            maxWidth: '800px', 
-            marginBottom: '2rem' 
-          }}>
-            <div style={{ 
-              position: 'relative', 
-              marginBottom: '1.5rem' 
-            }}>
-              <FaSearch style={{ 
-                position: 'absolute', 
-                left: '1rem', 
-                top: '50%', 
-                transform: 'translateY(-50%)', 
-                color: '#64748b' 
-              }} />
+          <div className="search-filter-container">
+            <div className="search-input-container">
+              <FaSearch className="search-icon" />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem 1rem 0.8rem 2.5rem', 
-                  borderRadius: '8px', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)', 
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                  color: '#e2e8f0', 
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  transition: 'all 0.3s ease'
-                }}
+                className="search-input"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm('')}
-                  style={{ 
-                    position: 'absolute', 
-                    right: '1rem', 
-                    top: '50%', 
-                    transform: 'translateY(-50%)', 
-                    background: 'none', 
-                    border: 'none', 
-                    color: '#64748b', 
-                    cursor: 'pointer' 
-                  }}
+                  className="clear-search-button"
                 >
                   <FaTimes />
                 </button>
@@ -193,29 +136,12 @@ const AllProjectsSection = () => {
             </div>
             
             {/* Category Filters */}
-            <div style={{ 
-              display: 'flex', 
-              flexWrap: 'wrap', 
-              justifyContent: 'center', 
-              gap: '0.5rem', 
-              marginBottom: '1rem' 
-            }}>
+            <div className="category-filters">
               {categories.map(category => (
                 <button
                   key={category.id}
                   onClick={() => setActiveCategory(category.id)}
-                  style={{ 
-                    padding: '0.5rem 1.2rem',
-                    borderRadius: '999px',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    backgroundColor: activeCategory === category.id ? 'rgba(249, 115, 22, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    color: activeCategory === category.id ? '#f97316' : '#e2e8f0',
-                    border: activeCategory === category.id ? '1px solid rgba(249, 115, 22, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
+                  className={`category-filter ${activeCategory === category.id ? 'active' : ''}`}
                 >
                   {category.name}
                 </button>
@@ -226,292 +152,523 @@ const AllProjectsSection = () => {
 
         {/* Projects Grid */}
         {filteredProjects.length > 0 ? (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-            gap: '1.5rem', 
-            width: '100%' 
-          }}>
+          <div className="projects-grid">
             {filteredProjects.map((project) => (
-              <motion.div
-                key={project._id || project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease',
-                  height: '100%',
-                  position: 'relative'
-                }}
-                whileHover={{ 
-                  y: -5, 
-                  boxShadow: '0 10px 25px rgba(249, 115, 22, 0.1)', 
-                  borderColor: 'rgba(249, 115, 22, 0.3)' 
-                }}
-              >
-                <div style={{ 
-                  width: '100%', 
-                  height: '180px', 
-                  position: 'relative', 
-                  overflow: 'hidden', 
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
-                }}>
-                  <img 
-                    src={getImageSource(project)} 
-                    alt={project.title} 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover',
-                      transition: 'transform 0.3s ease'
-                    }} 
-                    onError={handleImageError}
-                  />
-                </div>
-
-                <div style={{ 
-                  padding: '1.5rem', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  height: 'calc(100% - 180px)' 
-                }}>
-                  <div style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    padding: '0.25rem 0.8rem', 
-                    borderRadius: '999px', 
-                    background: project.category === 'web' ? 'rgba(56, 189, 248, 0.12)' : 
-                              project.category === 'ai' ? 'rgba(236, 72, 153, 0.12)' : 
-                              'rgba(74, 222, 128, 0.12)', 
-                    border: project.category === 'web' ? '1px solid rgba(56, 189, 248, 0.2)' : 
-                           project.category === 'ai' ? '1px solid rgba(236, 72, 153, 0.2)' : 
-                           '1px solid rgba(74, 222, 128, 0.2)', 
-                    color: project.category === 'web' ? '#38bdf8' : 
-                          project.category === 'ai' ? '#ec4899' : 
-                          '#4ade80', 
-                    fontSize: '0.75rem', 
-                    fontWeight: '600', 
-                    marginBottom: '0.75rem', 
-                    alignSelf: 'flex-start' 
-                  }}>
-                    {getCategoryIcon(project.category)}
-                    <span style={{ marginLeft: '0.3rem' }}>
-                      {project.category === 'web' ? 'WEB' : 
-                       project.category === 'ai' ? 'AI/ML' : 
-                       project.category === 'mobile' ? 'MOBILE' : 
-                       'PROJECT'}
-                    </span>
-                  </div>
-
-                  <h3 style={{ 
-                    fontSize: '1.1rem', 
-                    fontWeight: '600', 
-                    marginBottom: '0.75rem', 
-                    color: '#f8fafc' 
-                  }}>
-                    {project.title}
-                  </h3>
-
-                  <p style={{ 
-                    fontSize: '0.85rem', 
-                    color: '#94a3b8', 
-                    lineHeight: 1.6, 
-                    marginBottom: '1rem', 
-                    flex: 1 
-                  }}>
-                    {project.description}
-                  </p>
-
-                  {project.tags && project.tags.length > 0 && (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexWrap: 'wrap', 
-                      gap: '0.4rem', 
-                      marginBottom: '1.25rem' 
-                    }}>
-                      {project.tags.slice(0, 4).map((tag, i) => (
-                        <span 
-                          key={i} 
-                          style={{ 
-                            backgroundColor: 'rgba(30, 41, 59, 0.7)', 
-                            color: '#e2e8f0', 
-                            padding: '0.25rem 0.6rem', 
-                            borderRadius: '4px', 
-                            fontSize: '0.7rem', 
-                            border: '1px solid rgba(255, 255, 255, 0.1)' 
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '0.6rem', 
-                    marginTop: 'auto' 
-                  }}>
-                    {project.github && (
-                      <motion.a 
-                        href={project.github} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        whileHover={{ scale: 1.05 }} 
-                        whileTap={{ scale: 0.95 }} 
-                        style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          gap: '0.4rem', 
-                          padding: '0.6rem 0.8rem', 
-                          borderRadius: '6px', 
-                          fontSize: '0.8rem', 
-                          flex: 1, 
-                          backgroundColor: 'rgba(56, 189, 248, 0.1)', 
-                          border: '1px solid rgba(56, 189, 248, 0.2)', 
-                          color: '#38bdf8', 
-                          textDecoration: 'none', 
-                          transition: 'all 0.2s ease' 
-                        }}
-                      >
-                        <FaCode size={12} /> Code
-                      </motion.a>
-                    )}
-                    <motion.a 
-                      href={project.live || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      whileHover={{ scale: 1.05 }} 
-                      whileTap={{ scale: 0.95 }} 
-                      style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '0.4rem', 
-                        padding: '0.6rem 0.8rem', 
-                        borderRadius: '6px', 
-                        fontSize: '0.8rem', 
-                        flex: 1, 
-                        backgroundColor: project.live ? 'rgba(249, 115, 22, 0.1)' : 'rgba(100, 116, 139, 0.1)', 
-                        border: project.live ? '1px solid rgba(249, 115, 22, 0.2)' : '1px solid rgba(100, 116, 139, 0.2)', 
-                        color: project.live ? '#f97316' : '#64748b', 
-                        textDecoration: 'none', 
-                        cursor: project.live ? 'pointer' : 'not-allowed', 
-                        transition: 'all 0.2s ease' 
-                      }}
-                    >
-                      <FaGlobe size={12} /> {project.live ? 'Live' : 'N/A'}
-                    </motion.a>
-                  </div>
-                </div>
-              </motion.div>
+              <ProjectCard 
+                key={project._id} 
+                project={project} 
+                getOptimizedImageUrl={getOptimizedImageUrl}
+                handleImageError={handleImageError}
+              />
             ))}
           </div>
         ) : (
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            textAlign: 'center', 
-            padding: '4rem 2rem', 
-            color: '#94a3b8', 
-            backgroundColor: 'rgba(255, 255, 255, 0.03)', 
-            borderRadius: '12px', 
-            border: '1px dashed rgba(255, 255, 255, 0.1)' 
-          }}>
-            {searchTerm || activeCategory !== 'all' ? (
-              <>
-                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No projects found matching your criteria</p>
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setActiveCategory('all');
-                  }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    background: 'rgba(249, 115, 22, 0.1)',
-                    border: '1px solid rgba(249, 115, 22, 0.2)',
-                    color: '#f97316',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    marginTop: '1rem'
-                  }}
-                >
-                  Clear filters
-                </button>
-              </>
-            ) : (
-              <p style={{ fontSize: '1.1rem' }}>No projects available yet</p>
-            )}
-          </div>
+          <NoProjectsFound 
+            searchTerm={searchTerm} 
+            activeCategory={activeCategory}
+            onClearFilters={() => {
+              setSearchTerm('');
+              setActiveCategory('all');
+            }}
+          />
         )}
 
-        {/* Back to Top Button (only shows when scrolled) */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          style={{ 
-            position: 'fixed', 
-            bottom: '2rem', 
-            right: '2rem', 
-            zIndex: 100 
-          }}
-        >
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #f97316 0%, #f59e0b 100%)',
-              color: 'white',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 15px rgba(249, 115, 22, 0.3)',
-              transition: 'all 0.3s ease'
-            }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            ↑
-          </button>
-        </motion.div>
+        {/* Back to Top Button */}
+        {showBackToTop && (
+          <BackToTopButton />
+        )}
       </div>
 
-      {/* Responsive Styles */}
-      <style>{`
+      {/* CSS Styles */}
+      <style jsx global>{`
+        :root {
+          --primary-bg: #0f172a;
+          --secondary-bg: #1e293b;
+          --text-primary: #e2e8f0;
+          --text-secondary: #94a3b8;
+          --accent-orange: #f97316;
+          --accent-blue: #38bdf8;
+          --accent-pink: #ec4899;
+          --accent-green: #4ade80;
+          --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        .projects-container {
+          background-color: var(--primary-bg);
+          padding: 4rem 1rem;
+          min-height: 100vh;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          color: var(--text-primary);
+        }
+
+        .projects-content {
+          max-width: 1400px;
+          width: 100%;
+          margin: 0 auto;
+          position: relative;
+          z-index: 2;
+          padding: 0 1rem;
+        }
+
+        .projects-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          margin-bottom: 1rem;
+        }
+
+        .projects-header h2 {
+          font-size: clamp(1.8rem, 4vw, 2.5rem);
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, var(--accent-orange), #f59e0b);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          display: inline-block;
+        }
+
+        .normal-text {
+          color: var(--text-secondary);
+          display: inline-block;
+        }
+
+        .subtitle {
+          max-width: 700px;
+          margin-bottom: 1.5rem;
+          font-size: 1rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+
+        .search-filter-container {
+          width: 100%;
+          max-width: 800px;
+          margin-bottom: 2rem;
+        }
+
+        .search-input-container {
+          position: relative;
+          margin-bottom: 1.5rem;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--text-secondary);
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 0.8rem 1rem 0.8rem 2.5rem;
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+          background-color: rgba(255, 255, 255, 0.05);
+          color: var(--text-primary);
+          font-size: 0.95rem;
+          outline: none;
+          transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+          border-color: rgba(249, 115, 22, 0.3);
+          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+        }
+
+        .clear-search-button {
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          cursor: pointer;
+        }
+
+        .category-filters {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .category-filter {
+          padding: 0.5rem 1.2rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          background-color: rgba(255, 255, 255, 0.05);
+          color: var(--text-primary);
+          border: 1px solid var(--border-color);
+        }
+
+        .category-filter.active {
+          background-color: rgba(249, 115, 22, 0.2);
+          color: var(--accent-orange);
+          border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .projects-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 1.5rem;
+          width: 100%;
+        }
+
         @media (max-width: 1024px) {
-          #all-projects {
+          .projects-container {
             padding: 4rem 1rem;
           }
         }
+
         @media (max-width: 768px) {
-          #all-projects > div > div:nth-child(2) {
+          .projects-grid {
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           }
         }
+
         @media (max-width: 480px) {
-          #all-projects {
+          .projects-container {
             padding: 3rem 0.5rem;
           }
-          #all-projects > div {
+          
+          .projects-content {
             padding: 0 0.5rem;
           }
-          #all-projects > div > div:nth-child(2) {
+          
+          .projects-grid {
             grid-template-columns: 1fr;
+          }
+          
+          .category-filters {
+            gap: 0.3rem;
+          }
+          
+          .category-filter {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
           }
         }
       `}</style>
     </section>
   );
 };
+
+// Sub-components for better organization
+const LoadingState = () => (
+  <div className="loading-state">
+    <div className="loading-text">Loading projects...</div>
+  </div>
+);
+
+const ErrorState = ({ error }) => (
+  <div className="error-state">
+    <div className="error-text">Error: {error}</div>
+  </div>
+);
+
+const ProjectCard = ({ project, getOptimizedImageUrl, handleImageError }) => {
+  const categoryStyles = {
+    web: { bg: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8' },
+    ai: { bg: 'rgba(236, 72, 153, 0.12)', border: '1px solid rgba(236, 72, 153, 0.2)', color: '#ec4899' },
+    mobile: { bg: 'rgba(74, 222, 128, 0.12)', border: '1px solid rgba(74, 222, 128, 0.2)', color: '#4ade80' },
+    default: { bg: 'rgba(156, 163, 175, 0.12)', border: '1px solid rgba(156, 163, 175, 0.2)', color: '#9ca3af' }
+  };
+
+  const styles = categoryStyles[project.category] || categoryStyles.default;
+  const categoryName = project.category === 'web' ? 'WEB' : 
+                     project.category === 'ai' ? 'AI/ML' : 
+                     project.category === 'mobile' ? 'MOBILE' : 
+                     project.category?.toUpperCase() || 'PROJECT';
+
+  return (
+    <motion.div
+      className="project-card"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      whileHover={{ y: -5, boxShadow: '0 10px 25px rgba(249, 115, 22, 0.1)', borderColor: 'rgba(249, 115, 22, 0.3)' }}
+    >
+      <div className="project-image-container">
+        <img 
+          src={getOptimizedImageUrl(project) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzBmMTcyYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZTJlOGYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiPlByb2plY3QgUHJldmlldzwvdGV4dD48L3N2Zz4='}
+          alt={project.title}
+          className="project-image"
+          onError={handleImageError}
+          loading="lazy"
+        />
+      </div>
+
+      <div className="project-content">
+        <div className="category-badge" style={styles}>
+          {project.category === 'web' ? <FaCode /> : 
+           project.category === 'ai' ? <FaRobot /> : 
+           project.category === 'mobile' ? <FaMobileAlt /> : <FaCode />}
+          <span>{categoryName}</span>
+        </div>
+
+        <h3>{project.title}</h3>
+
+        <p className="project-description">{project.description}</p>
+
+        {project.tags?.length > 0 && (
+          <div className="project-tags">
+            {project.tags.slice(0, 4).map((tag, i) => (
+              <span key={i} className="project-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="project-links">
+          {project.github && (
+            <motion.a 
+              href={project.github} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="github-link"
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+            >
+              <FaCode size={12} /> Code
+            </motion.a>
+          )}
+          <motion.a 
+            href={project.live || '#'} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className={`live-link ${!project.live ? 'disabled' : ''}`}
+            whileHover={{ scale: project.live ? 1.05 : 1 }} 
+            whileTap={{ scale: project.live ? 0.95 : 1 }}
+          >
+            <FaGlobe size={12} /> {project.live ? 'Live' : 'N/A'}
+          </motion.a>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .project-card {
+          background-color: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          height: 100%;
+          position: relative;
+        }
+
+        .project-image-container {
+          width: 100%;
+          height: 180px;
+          position: relative;
+          overflow: hidden;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .project-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+
+        .project-content {
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          height: calc(100% - 180px);
+        }
+
+        .category-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.25rem 0.8rem;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+          align-self: flex-start;
+        }
+
+        .project-card h3 {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+          color: var(--text-primary);
+        }
+
+        .project-description {
+          font-size: 0.85rem;
+          color: var(--text-secondary);
+          line-height: 1.6;
+          margin-bottom: 1rem;
+          flex: 1;
+        }
+
+        .project-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+          margin-bottom: 1.25rem;
+        }
+
+        .project-tag {
+          background-color: rgba(30, 41, 59, 0.7);
+          color: var(--text-primary);
+          padding: 0.25rem 0.6rem;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          border: 1px solid var(--border-color);
+        }
+
+        .project-links {
+          display: flex;
+          gap: 0.6rem;
+          margin-top: auto;
+        }
+
+        .github-link, .live-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          padding: 0.6rem 0.8rem;
+          border-radius: 6px;
+          font-size: 0.8rem;
+          flex: 1;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .github-link {
+          background-color: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          color: var(--accent-blue);
+        }
+
+        .live-link {
+          background-color: rgba(249, 115, 22, 0.1);
+          border: 1px solid rgba(249, 115, 22, 0.2);
+          color: var(--accent-orange);
+        }
+
+        .live-link.disabled {
+          background-color: rgba(100, 116, 139, 0.1);
+          border: 1px solid rgba(100, 116, 139, 0.2);
+          color: var(--text-secondary);
+          cursor: not-allowed;
+        }
+      `}</style>
+    </motion.div>
+  );
+};
+
+const NoProjectsFound = ({ searchTerm, activeCategory, onClearFilters }) => (
+  <div className="no-projects">
+    {searchTerm || activeCategory !== 'all' ? (
+      <>
+        <p>No projects found matching your criteria</p>
+        <button 
+          onClick={onClearFilters}
+          className="clear-filters-button"
+        >
+          Clear filters
+        </button>
+      </>
+    ) : (
+      <p>No projects available yet</p>
+    )}
+
+    <style jsx>{`
+      .no-projects {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
+        background-color: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        border: 1px dashed var(--border-color);
+      }
+
+      .no-projects p {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .clear-filters-button {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        background: rgba(249, 115, 22, 0.1);
+        border: 1px solid rgba(249, 115, 22, 0.2);
+        color: var(--accent-orange);
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+      }
+    `}</style>
+  </div>
+);
+
+const BackToTopButton = () => (
+  <motion.div 
+    className="back-to-top-container"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3 }}
+  >
+    <motion.button
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="back-to-top-button"
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      ↑
+    </motion.button>
+
+    <style jsx>{`
+      .back-to-top-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 100;
+      }
+
+      .back-to-top-button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-orange), #f59e0b);
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        transition: all 0.3s ease;
+      }
+    `}</style>
+  </motion.div>
+);
 
 export default AllProjectsSection;
