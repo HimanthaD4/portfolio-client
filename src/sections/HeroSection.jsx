@@ -279,38 +279,42 @@ const HeroSection = () => {
             </motion.div>
           </div>
           
-          {/* Social Links */}
+          {/* Social Links - Now properly spaced */}
           <motion.div
-            className="social-links"
+            className="social-links-wrapper"
           >
-            {[
-              { icon: <FaGithub />, url: 'https://github.com/HimanthaD4', label: 'GitHub', initialPos: { y: 50, x: -20 } },
-              { icon: <FaLinkedin />, url: 'https://www.linkedin.com/in/himantha-hirushan-390122212/', label: 'LinkedIn', initialPos: { y: 30, x: 20 } },
-              { icon: <FaFacebook />, url: 'https://web.facebook.com/himantha.hirushan.71', label: 'Facebook', initialPos: { y: 40, x: -10 } },
-              { icon: <FaWhatsapp />, url: 'https://wa.me/94768840107', label: 'WhatsApp', initialPos: { y: 60, x: 10 } }
-            ].map((social, index) => (
-              <motion.a
-                key={index}
-                custom={index}
-                initial={{ opacity: 0, y: social.initialPos.y, x: social.initialPos.x }}
-                animate={socialControls}
-                href={social.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-icon"
-                whileHover={{ 
-                  color: '#f97316',
-                  backgroundColor: '#1e293b',
-                  borderColor: '#1e293b',
-                  y: -5,
-                  scale: 1.1,
-                }}
-                whileTap={{ scale: 0.9 }}
-                aria-label={social.label}
-              >
-                {social.icon}
-              </motion.a>
-            ))}
+            <motion.div
+              className="social-links"
+            >
+              {[
+                { icon: <FaGithub />, url: 'https://github.com/HimanthaD4', label: 'GitHub', initialPos: { y: 50, x: -20 } },
+                { icon: <FaLinkedin />, url: 'https://www.linkedin.com/in/himantha-hirushan-390122212/', label: 'LinkedIn', initialPos: { y: 30, x: 20 } },
+                { icon: <FaFacebook />, url: 'https://web.facebook.com/himantha.hirushan.71', label: 'Facebook', initialPos: { y: 40, x: -10 } },
+                { icon: <FaWhatsapp />, url: 'https://wa.me/94768840107', label: 'WhatsApp', initialPos: { y: 60, x: 10 } }
+              ].map((social, index) => (
+                <motion.a
+                  key={index}
+                  custom={index}
+                  initial={{ opacity: 0, y: social.initialPos.y, x: social.initialPos.x }}
+                  animate={socialControls}
+                  href={social.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  whileHover={{ 
+                    color: '#f97316',
+                    backgroundColor: '#1e293b',
+                    borderColor: '#1e293b',
+                    y: -5,
+                    scale: 1.1,
+                  }}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label={social.label}
+                >
+                  {social.icon}
+                </motion.a>
+              ))}
+            </motion.div>
           </motion.div>
         </motion.div>
         
@@ -329,7 +333,7 @@ const HeroSection = () => {
               className="profile-image"
             />
             
-            {/* Animated Tech Icons - Initially hidden */}
+            {/* Animated Tech Icons */}
             <motion.div className="tech-icons-container">
               {techIcons.map((tech, index) => (
                 <motion.div
@@ -359,7 +363,7 @@ const HeroSection = () => {
               ))}
             </motion.div>
 
-            {/* Enhanced glow effect under the image */}
+            {/* Glow effect */}
             <motion.div 
               className="image-glow"
               initial={{ opacity: 0 }}
@@ -424,7 +428,7 @@ const HeroSection = () => {
           justify-content: center;
           position: relative;
           overflow: hidden;
-          padding: 80px 5%;
+          padding: 80px 5% 120px; /* Increased bottom padding */
           background: radial-gradient(ellipse at top right, #1e293b, #0f172a);
           box-sizing: border-box;
           width: 100%;
@@ -489,7 +493,7 @@ const HeroSection = () => {
           display: flex;
           flex-wrap: wrap;
           gap: 1rem;
-          margin-bottom: 2.5rem;
+          margin-bottom: 2rem; /* Reduced margin */
         }
         
         .primary-button {
@@ -559,10 +563,17 @@ const HeroSection = () => {
           transform: rotate(10deg);
         }
         
+        .social-links-wrapper {
+          width: 100%;
+          margin-top: 1rem;
+          margin-bottom: 1.5rem;
+        }
+        
         .social-links {
           display: flex;
           gap: 1rem;
           flex-wrap: wrap;
+          justify-content: flex-start;
         }
         
         .social-icon {
@@ -572,8 +583,8 @@ const HeroSection = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 46px;
-          height: 46px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           background-color: rgba(15, 23, 42, 0.6);
           border: 1px solid rgba(255,255,255,0.08);
@@ -667,7 +678,7 @@ const HeroSection = () => {
         
         .scroll-indicator {
           position: absolute;
-          bottom: 30px;
+          bottom: 40px; /* Adjusted position */
           left: 50%;
           transform: translateX(-50%);
           cursor: pointer;
@@ -700,7 +711,7 @@ const HeroSection = () => {
         
         @media (max-width: 1024px) {
           .hero-section {
-            padding: 80px 5%;
+            padding: 80px 5% 120px;
           }
           
           .hero-title {
@@ -714,7 +725,7 @@ const HeroSection = () => {
         
         @media (max-width: 768px) {
           .hero-section {
-            padding: 80px 5% 60px;
+            padding: 80px 5% 100px;
             text-align: center;
           }
           
@@ -737,20 +748,32 @@ const HeroSection = () => {
           
           .hero-buttons {
             justify-content: center;
+            margin-bottom: 1.5rem;
+          }
+          
+          .social-links-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 1.5rem 0;
           }
           
           .social-links {
             justify-content: center;
+            gap: 0.8rem;
           }
           
           .hero-title {
             font-size: 2.3rem;
           }
+
+          .scroll-indicator {
+            bottom: 50px;
+          }
         }
         
         @media (max-width: 480px) {
           .hero-section {
-            padding: 60px 5% 40px;
+            padding: 60px 5% 80px;
           }
           
           .hero-title {
@@ -771,7 +794,32 @@ const HeroSection = () => {
             padding: 0.8rem 1.5rem;
             font-size: 1rem;
           }
-            
+
+          .social-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
+          }
+
+          .scroll-indicator {
+            bottom: 40px;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .hero-buttons {
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+          }
+
+          .social-links {
+            gap: 0.6rem;
+          }
+
+          .hero-section {
+            padding-bottom: 70px;
+          }
         }
       `}</style>
     </section>
