@@ -132,7 +132,7 @@ const Footer = () => {
               <FaGithub />
             </a>
             <a
-              href="https://www.linkedin.com/in/himanthad4/"
+              href="https://www.linkedin.com/in/himantha-hirushan-390122212/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn Profile"
