@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -12,8 +12,7 @@ const AdminLogin = () => {
   const { login, isAuthenticated, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && isAdmin) {
       navigate('/admin/dashboard');
     }
@@ -30,82 +29,76 @@ const AdminLogin = () => {
     if (result.success) {
       navigate('/admin/dashboard');
     } else {
-      setError(result.message);
+      setError(result.message || 'Invalid credentials. Please try again.');
     }
   };
 
-  // Inline styles
   const styles = {
-    pageContainer: {
+    container: {
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: '#0f172a',
       backgroundImage: 'radial-gradient(ellipse at top right, #1e293b, #0f172a)',
-      padding: '20px',
+      padding: '16px',
       overflow: 'hidden',
-      position: 'relative'
+      position: 'relative',
+      zIndex: 1,
+      marginTop:'30px',
     },
-    backgroundElements: {
-      position: 'absolute',
-      inset: 0,
-      overflow: 'hidden'
-    },
-    backgroundElement: {
+    backgroundCircle: {
       position: 'absolute',
       borderRadius: '50%',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      opacity: 0.1
+      backgroundColor: 'rgba(59,130,246,0.1)',
+      opacity: 0.2
     },
-    loginContainer: {
+    formWrapper: {
       position: 'relative',
       zIndex: 10,
-      backgroundColor: 'rgba(15, 23, 42, 0.8)',
-      backdropFilter: 'blur(20px)',
+      backgroundColor: 'rgba(15,23,42,0.85)',
+      backdropFilter: 'blur(15px)',
       padding: '40px',
       borderRadius: '16px',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: '1px solid rgba(255,255,255,0.1)',
       width: '100%',
-      maxWidth: '450px'
+      maxWidth: '400px',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
     },
-    header: {
-      textAlign: 'center',
-      marginBottom: '40px'
-    },
-    logoContainer: {
-      width: '80px',
-      height: '80px',
+    logoCircle: {
+      width: '70px',
+      height: '70px',
       background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
       borderRadius: '12px',
-      margin: '0 auto 20px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+      margin: '0 auto 20px',
+      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
     },
-    title: {
-      fontSize: '28px',
-      fontWeight: 700,
-      color: '#ffffff',
+    heading: {
+      textAlign: 'center',
+      color: '#fff',
+      fontSize: '24px',
+      fontWeight: '700',
       marginBottom: '8px'
     },
-    subtitle: {
+    subheading: {
+      textAlign: 'center',
       color: '#94a3b8',
       fontSize: '14px'
     },
     errorBox: {
-      marginBottom: '24px',
-      padding: '16px',
-      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+      backgroundColor: 'rgba(239,68,68,0.15)',
       color: '#fecaca',
+      border: '1px solid rgba(239,68,68,0.3)',
       borderRadius: '8px',
-      border: '1px solid rgba(239, 68, 68, 0.3)',
-      textAlign: 'center'
+      padding: '12px',
+      textAlign: 'center',
+      margin: '16px 0'
     },
-    formGroup: {
-      marginBottom: '24px'
+    inputGroup: {
+      marginBottom: '20px'
     },
     label: {
       display: 'block',
@@ -114,10 +107,10 @@ const AdminLogin = () => {
       fontSize: '14px',
       fontWeight: 500
     },
-    inputContainer: {
+    inputWrapper: {
       position: 'relative'
     },
-    inputIcon: {
+    icon: {
       position: 'absolute',
       top: '50%',
       left: '12px',
@@ -130,21 +123,17 @@ const AdminLogin = () => {
       backgroundColor: '#1e293b',
       border: '1px solid #334155',
       borderRadius: '8px',
-      color: '#ffffff',
+      color: '#fff',
       fontSize: '14px',
-      transition: 'all 0.2s ease',
-      outline: 'none'
+      outline: 'none',
+      transition: 'all 0.2s ease'
     },
-    inputFocus: {
-      borderColor: '#3b82f6',
-      boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)'
-    },
-    submitButton: {
+    button: {
       width: '100%',
       padding: '12px 24px',
       borderRadius: '8px',
       fontWeight: 600,
-      color: '#ffffff',
+      color: '#fff',
       background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
       border: 'none',
       cursor: 'pointer',
@@ -154,16 +143,12 @@ const AdminLogin = () => {
       gap: '8px',
       transition: 'all 0.2s ease'
     },
-    submitButtonHover: {
-      background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-    },
-    submitButtonDisabled: {
-      backgroundColor: 'rgba(59, 130, 246, 0.5)',
+    buttonDisabled: {
+      backgroundColor: 'rgba(59,130,246,0.5)',
       cursor: 'not-allowed'
     },
     footerText: {
-      marginTop: '32px',
+      marginTop: '24px',
       textAlign: 'center',
       color: '#64748b',
       fontSize: '12px'
@@ -174,168 +159,140 @@ const AdminLogin = () => {
   };
 
   return (
-    <div style={styles.pageContainer}>
-      {/* Animated background elements */}
-      <div style={styles.backgroundElements}>
-        {[...Array(10)].map((_, i) => (
-          <motion.div
-            key={i}
-            style={{
-              ...styles.backgroundElement,
-              width: `${Math.random() * 200 + 100}px`,
-              height: `${Math.random() * 200 + 100}px`,
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              scale: Math.random() * 0.5 + 0.5
-            }}
-            animate={{
-              x: [null, Math.random() * window.innerWidth],
-              y: [null, Math.random() * window.innerHeight],
-              transition: {
-                duration: Math.random() * 20 + 20,
-                repeat: Infinity,
-                repeatType: 'reverse'
-              }
-            }}
-          />
-        ))}
-      </div>
+    <div style={styles.container}>
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          style={{
+            ...styles.backgroundCircle,
+            width: `${Math.random() * 150 + 80}px`,
+            height: `${Math.random() * 150 + 80}px`,
+            top: `${Math.random() * 100}%`,
+            left: `${Math.random() * 100}%`
+          }}
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.2, 0.4, 0.2]
+          }}
+          transition={{
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity
+          }}
+        />
+      ))}
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        style={styles.loginContainer}
+        style={styles.formWrapper}
       >
-        <div style={styles.header}>
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ 
-              duration: 0.6,
-              repeat: Infinity,
-              repeatType: 'mirror',
-              repeatDelay: 2
-            }}
-            style={styles.logoContainer}
-          >
-            <FiLock style={{ color: '#ffffff', fontSize: '28px' }} />
-          </motion.div>
-          <h2 style={styles.title}>Admin Portal</h2>
-          <p style={styles.subtitle}>Enter your credentials to continue</p>
-        </div>
+        <motion.div
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{
+            duration: 0.6,
+            repeat: Infinity,
+            repeatType: 'mirror',
+            repeatDelay: 2
+          }}
+          style={styles.logoCircle}
+        >
+          <FiLock color="#fff" size={28} />
+        </motion.div>
 
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={styles.errorBox}
-          >
-            {error}
-          </motion.div>
-        )}
+        <h2 style={styles.heading}>Admin Portal</h2>
+        <p style={styles.subheading}>Secure login to admin dashboard</p>
 
-        <form onSubmit={handleSubmit} style={{ marginTop: '24px' }}>
-          <div style={styles.formGroup}>
+        {error && <div style={styles.errorBox}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <div style={styles.inputGroup}>
             <label style={styles.label}>Username</label>
-            <div style={styles.inputContainer}>
-              <div style={styles.inputIcon}>
-                <FiUser />
-              </div>
+            <div style={styles.inputWrapper}>
+              <FiUser style={styles.icon} />
               <input
                 type="text"
-                style={{
-                  ...styles.input,
-                  ':focus': styles.inputFocus
-                }}
+                style={styles.input}
+                placeholder="Admin username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoFocus
-                placeholder="Enter admin username"
               />
             </div>
           </div>
 
-          <div style={styles.formGroup}>
+          <div style={styles.inputGroup}>
             <label style={styles.label}>Password</label>
-            <div style={styles.inputContainer}>
-              <div style={styles.inputIcon}>
-                <FiLock />
-              </div>
+            <div style={styles.inputWrapper}>
+              <FiLock style={styles.icon} />
               <input
                 type="password"
-                style={{
-                  ...styles.input,
-                  ':focus': styles.inputFocus
-                }}
+                style={styles.input}
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
               />
             </div>
           </div>
 
           <motion.button
             type="submit"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: !isLoading ? 1.02 : 1 }}
+            whileTap={{ scale: !isLoading ? 0.98 : 1 }}
             disabled={isLoading}
             style={{
-              ...styles.submitButton,
-              ...(isLoading ? styles.submitButtonDisabled : {}),
-              ':hover': !isLoading ? styles.submitButtonHover : {}
+              ...styles.button,
+              ...(isLoading ? styles.buttonDisabled : {})
             }}
           >
             {isLoading ? (
               <>
-                <svg 
+                <svg
                   style={styles.spinner}
-                  width="20" 
-                  height="20" 
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
-                  <path 
-                    fill="currentColor" 
+                  <path
+                    fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     opacity="0.75"
                   />
                 </svg>
-                <span>Authenticating...</span>
+                <span style={{ marginLeft: '8px' }}>Authenticating...</span>
               </>
             ) : (
               <>
                 <span>Continue</span>
-                <FiArrowRight style={{ marginLeft: '8px' }} />
+                <FiArrowRight />
               </>
             )}
           </motion.button>
         </form>
 
         <div style={styles.footerText}>
-          <p>Secure access to administration panel</p>
+          Access restricted to authorized admin users
         </div>
       </motion.div>
 
-      {/* Global styles */}
       <style>
         {`
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          
           input:focus {
             border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important;
           }
-          
           button:hover:not(:disabled) {
             background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
           }
         `}
       </style>
