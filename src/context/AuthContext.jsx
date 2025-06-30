@@ -10,14 +10,18 @@ export const AuthProvider = ({ children }) => {
     isAdmin: false,
     isLoading: true
   });
+
   const navigate = useNavigate();
 
-  // Configure axios to always send credentials
+  // Always send credentials (cookies, etc.)
   axios.defaults.withCredentials = true;
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   useEffect(() => {
     checkAuthStatus();
+    // Optionally, add listener to check auth on tab focus:
+    window.addEventListener('focus', checkAuthStatus);
+    return () => window.removeEventListener('focus', checkAuthStatus);
   }, []);
 
   const checkAuthStatus = async () => {
@@ -39,17 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/auth/login`,
-        { username, password }
-      );
-      
-      setAuthState({
-        isAuthenticated: true,
-        isAdmin: res.data.isAdmin,
-        isLoading: false
-      });
-      
+      await axios.post(`${API_BASE_URL}/api/auth/login`, { username, password });
       await checkAuthStatus();
       return { success: true };
     } catch (err) {
@@ -69,7 +63,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin: false,
         isLoading: false
       });
-      navigate('/');
+      navigate('/admin');
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -77,7 +71,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider 
-      value={{ 
+      value={{
         ...authState,
         login,
         logout,
