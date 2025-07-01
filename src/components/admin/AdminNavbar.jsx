@@ -13,7 +13,7 @@ const AdminNavbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin');
+    navigate('/admin/pr');
   };
 
   const isActive = (path) => location.pathname === path;
