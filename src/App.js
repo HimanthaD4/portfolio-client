@@ -10,7 +10,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProject from './pages/admin/AdminProjects';
-import AdminContact from './pages/admin/AdminContacts'
+import AdminContact from './pages/admin/AdminContacts';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -24,7 +24,9 @@ function ScrollToTop() {
 
 function App() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Detect if it's admin routes excluding login
+  const isAdminLayoutRoute = location.pathname.startsWith('/admin/') && location.pathname !== '/admin';
   const isProjectsRoute = location.pathname === '/projects';
 
   return (
@@ -37,7 +39,7 @@ function App() {
       <ScrollToTop />
       
       {/* Conditional Navbar Rendering */}
-      {isAdminRoute ? (
+      {isAdminLayoutRoute ? (
         <AdminNavbar />
       ) : isProjectsRoute ? (
         <NavbarProjects />
@@ -81,8 +83,8 @@ function App() {
         <Route path="*" element={<Home />} />
       </Routes>
 
-      {/* Footer (not shown on admin routes) */}
-      {!isAdminRoute && <Footer />}
+      {/* Footer (not shown on admin layout routes) */}
+      {!isAdminLayoutRoute && <Footer />}
     </div>
   );
 }
