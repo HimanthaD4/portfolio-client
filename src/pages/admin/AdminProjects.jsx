@@ -14,8 +14,6 @@ import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from "framer-motion";
 import styled from 'styled-components';
-import ReactCrop from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 import debounce from 'lodash.debounce';
 
 // ========== Styled Components ==========
@@ -405,19 +403,6 @@ const CloseModalButton = styled.button`
   cursor: pointer;
 `;
 
-const CropContainer = styled.div`
-  max-width: 500px;
-  width: 100%;
-  margin: 1rem 0;
-`;
-
-const CropControls = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-
 const SearchContainer = styled.div`
   display: flex;
   align-items: center;
@@ -457,10 +442,6 @@ const AdminProjects = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [crop, setCrop] = useState({ aspect: 4/3 });
-  const [completedCrop, setCompletedCrop] = useState(null);
-  const imgRef = useRef(null);
-  const previewCanvasRef = useRef(null);
 
   const techTags = [
     'React', 'Express', 'MongoDB', 'Node.js', 'SQL', 
@@ -619,7 +600,7 @@ const AdminProjects = () => {
     }
 
     if (!file.type.match('image.*')) {
-      setError('Only image files are allowed');
+      setError('Only image files are allowed (jpeg, jpg, png, gif)');
       return;
     }
 
@@ -671,34 +652,43 @@ const AdminProjects = () => {
     setSuccess(null);
 
     try {
-      const projectData = new FormData();
-      projectData.append('title', formData.title);
-      projectData.append('description', formData.description);
-      projectData.append('tags', formData.tags.join(','));
-      projectData.append('category', formData.category);
-      projectData.append('featured', formData.featured);
-      if (formData.image) projectData.append('image', formData.image);
-      if (formData.github) projectData.append('github', formData.github);
-      if (formData.live) projectData.append('live', formData.live);
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('tags', formData.tags.join(','));
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('featured', formData.featured);
+      
+      // Explicit image handling for updates
+      if (formData.image instanceof File) {
+        // New image selected - will replace old one
+        formDataToSend.append('image', formData.image);
+      } else if (formData.image === null && currentProject?.image) {
+        // Explicitly removing image
+        formDataToSend.append('removeImage', 'true');
+      }
+      
+      if (formData.github) formDataToSend.append('github', formData.github);
+      if (formData.live) formDataToSend.append('live', formData.live);
 
-      const url = isEditing && currentProject 
-        ? `${API_URL}/api/projects/${currentProject._id}`
-        : `${API_URL}/api/projects`;
-
-      const method = isEditing && currentProject ? 'put' : 'post';
-
-      const response = await axios[method](url, projectData, {
+      const config = {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
         withCredentials: true
-      });
+      };
+
+      const response = isEditing 
+        ? await axios.put(`${API_URL}/api/projects/${currentProject._id}`, formDataToSend, config)
+        : await axios.post(`${API_URL}/api/projects`, formDataToSend, config);
 
       setSuccess(isEditing ? 'Project updated successfully' : 'Project created successfully');
       resetForm();
       fetchProjects();
     } catch (err) {
-      setError(err.response?.data?.message || 'Operation failed. Please try again.');
+      console.error('Error submitting project:', err);
+      setError(err.response?.data?.message || 
+        (isEditing ? 'Failed to update project' : 'Failed to create project'));
     } finally {
       setIsSubmitting(false);
     }
@@ -714,13 +704,16 @@ const AdminProjects = () => {
       tags: project.tags,
       category: project.category,
       featured: project.featured || false,
-      image: null,
+      image: null, // Don't keep reference to existing image - we'll handle it separately
       github: project.github || '',
       live: project.live || ''
     });
     
-    if (project.image?.data) {
-      setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
+    // Set image preview if project has an image
+    if (project.image) {
+      setImagePreview(`${API_URL}/api/projects/${project._id}/image?${Date.now()}`); // Cache bust
+    } else {
+      setImagePreview('');
     }
   };
 
@@ -952,6 +945,10 @@ const AdminProjects = () => {
                     </div>
                   )}
                 </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                  {isEditing && currentProject?.image && !formData.image && 
+                    'Current image will be kept if no new image is selected'}
+                </div>
               </FormGroup>
 
               <FormGrid>
@@ -1064,9 +1061,9 @@ const AdminProjects = () => {
                   whileHover={{ scale: 1.01 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  {project.image?.data ? (
+                  {project.image ? (
                     <ProjectImage
-                      src={`data:${project.image.contentType};base64,${project.image.data}`}
+                      src={`${API_URL}/api/projects/${project._id}/image?${Date.now()}`} // Cache bust
                       alt={project.title}
                       loading="lazy"
                     />

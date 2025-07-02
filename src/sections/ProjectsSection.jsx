@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaGithub, FaGlobe, FaLayerGroup, FaCode, FaRobot, FaMobileAlt } from 'react-icons/fa';
+import { FaGithub, FaGlobe, FaLayerGroup, FaCode, FaRobot, FaMobileAlt, FaDesktop, FaGamepad, FaMicrochip } from 'react-icons/fa';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
@@ -17,7 +17,20 @@ const ProjectsSection = () => {
       try {
         const response = await axios.get(`${API_URL}/api/projects`);
         const projectsData = Array.isArray(response.data.data) ? response.data.data : [];
-        setProjects(projectsData);
+        
+        // Process projects to ensure proper image URLs
+        const processedProjects = projectsData.map(project => ({
+          ...project,
+          // Create a proper image URL structure
+          image: project.image ? {
+            url: project.image.url || `/api/projects/${project._id}/image`,
+            contentType: project.image.contentType,
+            size: project.image.size,
+            data: project.image.data // Keep base64 data if exists
+          } : null
+        }));
+        
+        setProjects(processedProjects);
         setLoading(false);
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to fetch projects');
@@ -53,13 +66,17 @@ const ProjectsSection = () => {
       return 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
     }
     
+    // Handle different image URL formats
     if (project.image.url) {
-      if (project.image.url.startsWith('http')) {
+      // If URL is already complete
+      if (project.image.url.startsWith('http') || project.image.url.startsWith('data:')) {
         return project.image.url;
       }
+      // If URL is relative, prepend API URL
       return `${API_URL}${project.image.url}`;
     }
     
+    // Handle direct base64 data
     if (project.image.data) {
       return `data:${project.image.contentType || 'image/jpeg'};base64,${project.image.data}`;
     }
@@ -72,9 +89,9 @@ const ProjectsSection = () => {
       case 'web': return <FaCode />;
       case 'ai': return <FaRobot />;
       case 'mobile': return <FaMobileAlt />;
-      case 'desktop': return <FaCode />;
-      case 'game': return <FaCode />;
-      case 'embedded': return <FaCode />;
+      case 'desktop': return <FaDesktop />;
+      case 'game': return <FaGamepad />;
+      case 'embedded': return <FaMicrochip />;
       default: return <FaCode />;
     }
   };
@@ -170,7 +187,7 @@ const ProjectsSection = () => {
         position: 'relative',
         zIndex: 2,
       }}>
-        {/* Section Header - Updated to match SkillsSection */}
+        {/* Section Header */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -414,7 +431,7 @@ const ProjectsSection = () => {
           )}
         </div>
 
-        {/* CTA Button - Updated to match SkillsSection */}
+        {/* CTA Button */}
         <motion.div 
           style={{
             display: 'flex',
@@ -536,6 +553,9 @@ const ProjectsSection = () => {
       case 'web': return `rgba(56, 189, 248, ${opacity})`;
       case 'ai': return `rgba(236, 72, 153, ${opacity})`;
       case 'mobile': return `rgba(74, 222, 128, ${opacity})`;
+      case 'desktop': return `rgba(139, 92, 246, ${opacity})`;
+      case 'game': return `rgba(236, 72, 153, ${opacity})`;
+      case 'embedded': return `rgba(20, 184, 166, ${opacity})`;
       default: return `rgba(156, 163, 175, ${opacity})`;
     }
   }
@@ -545,6 +565,9 @@ const ProjectsSection = () => {
       case 'web': return 'rgba(56, 189, 248, 0.12)';
       case 'ai': return 'rgba(236, 72, 153, 0.12)';
       case 'mobile': return 'rgba(74, 222, 128, 0.12)';
+      case 'desktop': return 'rgba(139, 92, 246, 0.12)';
+      case 'game': return 'rgba(236, 72, 153, 0.12)';
+      case 'embedded': return 'rgba(20, 184, 166, 0.12)';
       default: return 'rgba(156, 163, 175, 0.12)';
     }
   }
@@ -554,6 +577,9 @@ const ProjectsSection = () => {
       case 'web': return 'rgba(56, 189, 248, 0.2)';
       case 'ai': return 'rgba(236, 72, 153, 0.2)';
       case 'mobile': return 'rgba(74, 222, 128, 0.2)';
+      case 'desktop': return 'rgba(139, 92, 246, 0.2)';
+      case 'game': return 'rgba(236, 72, 153, 0.2)';
+      case 'embedded': return 'rgba(20, 184, 166, 0.2)';
       default: return 'rgba(156, 163, 175, 0.2)';
     }
   }
@@ -563,6 +589,9 @@ const ProjectsSection = () => {
       case 'web': return '#38bdf8';
       case 'ai': return '#ec4899';
       case 'mobile': return '#4ade80';
+      case 'desktop': return '#8b5cf6';
+      case 'game': return '#ec4899';
+      case 'embedded': return '#14b8a6';
       default: return '#9ca3af';
     }
   }
