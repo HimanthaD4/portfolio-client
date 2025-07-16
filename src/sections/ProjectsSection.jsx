@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaGithub, FaGlobe, FaLayerGroup, FaCode, FaRobot, FaMobileAlt, FaDesktop, FaGamepad, FaMicrochip } from 'react-icons/fa';
+import { FaGithub, FaGlobe, FaLayerGroup, FaCode, FaRobot, FaMobileAlt, FaDesktop, FaGamepad, FaMicrochip, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
@@ -11,6 +11,7 @@ const ProjectsSection = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -18,15 +19,13 @@ const ProjectsSection = () => {
         const response = await axios.get(`${API_URL}/api/projects`);
         const projectsData = Array.isArray(response.data.data) ? response.data.data : [];
         
-        // Process projects to ensure proper image URLs
         const processedProjects = projectsData.map(project => ({
           ...project,
-          // Create a proper image URL structure
           image: project.image ? {
             url: project.image.url || `/api/projects/${project._id}/image`,
             contentType: project.image.contentType,
             size: project.image.size,
-            data: project.image.data // Keep base64 data if exists
+            data: project.image.data 
           } : null
         }));
         
@@ -58,7 +57,7 @@ const ProjectsSection = () => {
 
   const handleImageError = (e) => {
     e.target.src = 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
-    e.target.onerror = null; // Prevent infinite loop
+    e.target.onerror = null;
   };
 
   const getImageUrl = (project) => {
@@ -66,17 +65,13 @@ const ProjectsSection = () => {
       return 'https://via.placeholder.com/800x600/0f172a/e2e8f0?text=Project+Preview';
     }
     
-    // Handle different image URL formats
     if (project.image.url) {
-      // If URL is already complete
       if (project.image.url.startsWith('http') || project.image.url.startsWith('data:')) {
         return project.image.url;
       }
-      // If URL is relative, prepend API URL
       return `${API_URL}${project.image.url}`;
     }
     
-    // Handle direct base64 data
     if (project.image.data) {
       return `data:${project.image.contentType || 'image/jpeg'};base64,${project.image.data}`;
     }
@@ -93,6 +88,16 @@ const ProjectsSection = () => {
       case 'game': return <FaGamepad />;
       case 'embedded': return <FaMicrochip />;
       default: return <FaCode />;
+    }
+  };
+
+  const scrollProjects = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -400 : 400;
+      scrollContainerRef.current.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -135,13 +140,14 @@ const ProjectsSection = () => {
         position: 'relative',
         minHeight: '100vh',
         background: 'linear-gradient(to bottom, #0f172a, #1e293b)',
-        padding: '2rem 1rem',
+        padding: '4rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         color: '#cbd5e1',
         userSelect: 'none',
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
       {/* Background overlay */}
@@ -194,6 +200,7 @@ const ProjectsSection = () => {
           alignItems: 'center',
           textAlign: 'center',
           marginBottom: '3.5rem',
+          padding: '0 1rem',
         }}>
           <h2 style={{
               fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
@@ -232,139 +239,235 @@ const ProjectsSection = () => {
           </p>
         </div>
         
-        {/* Projects Grid */}
+        {/* Projects Container with Scroll Controls */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1.5rem',
-          padding: '1rem',
+          position: 'relative',
+          width: '100%',
           marginBottom: '3rem',
         }}>
-          {projects.length > 0 ? (
-            projects.map((project) => (
-              <motion.div
-                key={project._id}
-                style={{
-                  backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease',
-                  height: '100%',
-                  position: 'relative',
-                  backdropFilter: 'blur(5px)',
-                  boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isVisible ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6 }}
-                whileHover={{ 
-                  y: -5, 
-                  borderColor: getCategoryColor(project.category, 0.3),
-                  boxShadow: `0 15px 30px ${getCategoryColor(project.category, 0.1)}`
-                }}
-              >
-                {/* Project Image */}
-                <div style={{
-                  width: '100%',
-                  height: '180px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  <img 
-                    src={getImageUrl(project)} 
-                    alt={project.title} 
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform 0.5s ease',
-                    }}
-                    onError={handleImageError}
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Project Content */}
-                <div style={{
-                  padding: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: 'calc(100% - 180px)',
-                }}>
-                  {/* Category Badge */}
+          {/* Left Scroll Button */}
+          <button 
+            onClick={() => scrollProjects('left')}
+            style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 10,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(15, 23, 42, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(249, 115, 22, 0.8)';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)';
+              e.currentTarget.style.transform = 'translateY(-50%)';
+            }}
+          >
+            <FaChevronLeft />
+          </button>
+          
+          {/* Projects Scrollable Container */}
+          <div 
+            ref={scrollContainerRef}
+            style={{
+              display: 'flex',
+              gap: '1.5rem',
+              padding: '1rem',
+              overflowX: 'auto',
+              scrollBehavior: 'smooth',
+              scrollbarWidth: 'none', // For Firefox
+              msOverflowStyle: 'none', // For IE
+              '&::-webkit-scrollbar': {
+                display: 'none', // For Chrome/Safari
+              },
+            }}
+          >
+            {projects.length > 0 ? (
+              projects.map((project) => (
+                <motion.div
+                  key={project._id}
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    width: '320px',
+                    minWidth: '320px',
+                    flexShrink: 0,
+                    position: 'relative',
+                    backdropFilter: 'blur(5px)',
+                    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+                    height: '520px', // Fixed height for all cards
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={isVisible ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.6 }}
+                  whileHover={{ 
+                    y: -5, 
+                    borderColor: getCategoryColor(project.category, 0.3),
+                    boxShadow: `0 15px 30px ${getCategoryColor(project.category, 0.1)}`
+                  }}
+                >
+                  {/* Project Image */}
                   <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '0.25rem 0.7rem',
-                    borderRadius: '999px',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                    marginBottom: '0.75rem',
-                    alignSelf: 'flex-start',
-                    background: getCategoryBackground(project.category),
-                    border: `1px solid ${getCategoryBorder(project.category)}`,
-                    color: getCategoryText(project.category),
+                    width: '100%',
+                    height: '180px',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}>
-                    {getCategoryIcon(project.category)}
-                    <span style={{ marginLeft: '0.3rem' }}>
-                      {formatCategoryName(project.category)}
-                    </span>
+                    <img 
+                      src={getImageUrl(project)} 
+                      alt={project.title} 
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transition: 'transform 0.5s ease',
+                      }}
+                      onError={handleImageError}
+                      loading="lazy"
+                    />
                   </div>
 
-                  {/* Project Title */}
-                  <h3 style={{
-                    fontSize: '1.2rem',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem',
-                    color: '#f8fafc',
-                  }}>
-                    {project.title}
-                  </h3>
-
-                  {/* Project Description */}
-                  <p style={{
-                    fontSize: '0.9rem',
-                    color: '#94a3b8',
-                    lineHeight: 1.5,
-                    marginBottom: '1rem',
+                  {/* Project Content */}
+                  <div style={{
+                    padding: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
                     flex: 1,
                   }}>
-                    {project.description}
-                  </p>
+                    {/* Category Badge */}
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '0.25rem 0.7rem',
+                      borderRadius: '999px',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      marginBottom: '0.75rem',
+                      alignSelf: 'flex-start',
+                      background: getCategoryBackground(project.category),
+                      border: `1px solid ${getCategoryBorder(project.category)}`,
+                      color: getCategoryText(project.category),
+                    }}>
+                      {getCategoryIcon(project.category)}
+                      <span style={{ marginLeft: '0.3rem' }}>
+                        {formatCategoryName(project.category)}
+                      </span>
+                    </div>
 
-                  {/* Project Tags */}
-                  {project.tags?.length > 0 && (
+                    {/* Project Title */}
+                    <h3 style={{
+                      fontSize: '1.2rem',
+                      fontWeight: '600',
+                      marginBottom: '0.5rem',
+                      color: '#f8fafc',
+                    }}>
+                      {project.title}
+                    </h3>
+
+                    {/* Project Description with fade effect */}
+                    <div style={{
+                      position: 'relative',
+                      flex: 1,
+                      overflow: 'hidden',
+                      marginBottom: '1rem',
+                    }}>
+                      <p style={{
+                        fontSize: '0.9rem',
+                        color: '#94a3b8',
+                        lineHeight: 1.5,
+                        margin: 0,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 4,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {project.description}
+                      </p>
+                      <div style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '30px',
+                        background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.9))',
+                      }}></div>
+                    </div>
+
+                    {/* Project Tags */}
+                    {project.tags?.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '0.4rem',
+                        marginBottom: '1.25rem',
+                      }}>
+                        {project.tags.slice(0, 3).map((tag, i) => (
+                          <span key={i} style={{
+                            backgroundColor: 'rgba(30, 41, 59, 0.7)',
+                            color: '#e2e8f0',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                          }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Project Links */}
                     <div style={{
                       display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '0.4rem',
-                      marginBottom: '1.25rem',
+                      gap: '0.6rem',
+                      marginTop: 'auto',
                     }}>
-                      {project.tags.slice(0, 3).map((tag, i) => (
-                        <span key={i} style={{
-                          backgroundColor: 'rgba(30, 41, 59, 0.7)',
-                          color: '#e2e8f0',
-                          padding: '0.25rem 0.6rem',
-                          borderRadius: '4px',
-                          fontSize: '0.65rem',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                        }}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Project Links */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.6rem',
-                    marginTop: 'auto',
-                  }}>
-                    {project.github && (
+                      {project.github && (
+                        <motion.a 
+                          href={project.github} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            padding: '0.5rem 0.8rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            flex: 1,
+                            textDecoration: 'none',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            border: '1px solid rgba(56, 189, 248, 0.2)',
+                            color: '#38bdf8',
+                          }}
+                          whileHover={{ scale: 1.05 }} 
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <FaCode size={12} /> Code
+                        </motion.a>
+                      )}
                       <motion.a 
-                        href={project.github} 
+                        href={project.live || '#'} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         style={{
@@ -377,58 +480,69 @@ const ProjectsSection = () => {
                           fontSize: '0.75rem',
                           flex: 1,
                           textDecoration: 'none',
-                          backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                          border: '1px solid rgba(56, 189, 248, 0.2)',
-                          color: '#38bdf8',
+                          backgroundColor: project.live ? 'rgba(249, 115, 22, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                          border: project.live ? '1px solid rgba(249, 115, 22, 0.2)' : '1px solid rgba(100, 116, 139, 0.2)',
+                          color: project.live ? '#f97316' : '#64748b',
+                          cursor: project.live ? 'pointer' : 'not-allowed',
                         }}
-                        whileHover={{ scale: 1.05 }} 
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: project.live ? 1.05 : 1 }} 
+                        whileTap={{ scale: project.live ? 0.95 : 1 }}
                       >
-                        <FaCode size={12} /> Code
+                        <FaGlobe size={12} /> {project.live ? 'Live' : 'N/A'}
                       </motion.a>
-                    )}
-                    <motion.a 
-                      href={project.live || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        padding: '0.5rem 0.8rem',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        flex: 1,
-                        textDecoration: 'none',
-                        backgroundColor: project.live ? 'rgba(249, 115, 22, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                        border: project.live ? '1px solid rgba(249, 115, 22, 0.2)' : '1px solid rgba(100, 116, 139, 0.2)',
-                        color: project.live ? '#f97316' : '#64748b',
-                        cursor: project.live ? 'pointer' : 'not-allowed',
-                      }}
-                      whileHover={{ scale: project.live ? 1.05 : 1 }} 
-                      whileTap={{ scale: project.live ? 0.95 : 1 }}
-                    >
-                      <FaGlobe size={12} /> {project.live ? 'Live' : 'N/A'}
-                    </motion.a>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))
-          ) : (
-            <div style={{
-              gridColumn: '1 / -1',
-              textAlign: 'center',
-              padding: '2rem',
-              color: '#94a3b8',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '12px',
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(5px)',
-            }}>
-              No projects available
-            </div>
-          )}
+                </motion.div>
+              ))
+            ) : (
+              <div style={{
+                width: '100%',
+                textAlign: 'center',
+                padding: '2rem',
+                color: '#94a3b8',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px dashed rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(5px)',
+              }}>
+                No projects available
+              </div>
+            )}
+          </div>
+
+          {/* Right Scroll Button */}
+          <button 
+            onClick={() => scrollProjects('right')}
+            style={{
+              position: 'absolute',
+              right: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 10,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(15, 23, 42, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(249, 115, 22, 0.8)';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)';
+              e.currentTarget.style.transform = 'translateY(-50%)';
+            }}
+          >
+            <FaChevronRight />
+          </button>
         </div>
 
         {/* CTA Button */}
@@ -524,23 +638,17 @@ const ProjectsSection = () => {
           }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 768px) {
           #projects {
-            padding: 6rem 1rem;
+            padding: 4rem 1rem;
           }
           
-          #projects > div > div:nth-child(2) {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 600px) {
-          #projects {
-            padding: 5rem 1rem;
+          #projects button[style*="left: 1rem"] {
+            left: 0.5rem;
           }
           
-          #projects > div > div:nth-child(2) {
-            grid-template-columns: 1fr;
+          #projects button[style*="right: 1rem"] {
+            right: 0.5rem;
           }
         }
       `}</style>
@@ -609,4 +717,4 @@ const ProjectsSection = () => {
   }
 };
 
-export default ProjectsSection; 
+export default ProjectsSection;
